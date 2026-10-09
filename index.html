@@ -2061,7 +2061,7 @@ function datProcessar(reg){
   const porPct = (a,b)=>(b.percent||0)-(a.percent||0);
   g.transporte.sort(porPct); g.instalacao.sort(porPct);
   INST.counts=c; INST.transporte=g.transporte; INST.instalacao=g.instalacao; INST.agendada=g.agendada; INST.aguardo=g.aguardo;
-  INST.emCurso=[...g.instalacao,...g.transporte].filter(x=>x.lat||x.long);
+  INST.emCurso=g.instalacao.filter(x=>x.lat||x.long);   // só "Em instalação": o mapa tem de bater com a coluna
   INST.ok=true;
 }
 async function lerInstalacoes(){
@@ -2305,7 +2305,7 @@ function drawMap(id){
     markers[id].push(L.marker(p.pos,{icon:pinFor(p.m,1),interactive:!tv}).addTo(m0));
     b.push(p.pos);
   });
-  if(tv && INST.ok){                       // instalações em curso (Em instalação + Em transporte)
+  if(tv && INST.ok){                       // instalações em curso (só "Em instalação")
     const t=Math.round(34*innerHeight/1080);
     INST.emCurso.forEach(r=>{
       const pos=[r.lat,r.long];
