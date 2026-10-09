@@ -1182,6 +1182,10 @@ button.tm-more:hover,button.tm-more:focus-visible{background:var(--fill-2);color
 #ilist-lista .tm-wr .dt span{font-size:12px}
 #ilist-lista .tm-wr .cl{font-size:15px}
 #ilist-lista .tm-wr .id{font-size:13px}
+.tm-avrow{display:flex;align-items:center;gap:calc(6*var(--u))}
+.tm-pp.fz{width:calc(112*var(--u))}
+.tm-groups.compact .tm-pp.fz{width:calc(104*var(--u))}
+.tm-fz{font-size:calc(14*var(--u));font-weight:700;letter-spacing:-.01em;color:var(--orange);background:color-mix(in srgb,var(--orange) 16%,transparent);border:1px solid color-mix(in srgb,var(--orange) 40%,transparent);border-radius:99px;padding:calc(2*var(--u)) calc(7*var(--u));white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1737,6 +1741,14 @@ const mixc = (v,p)=>`color-mix(in srgb, ${v} ${p}%, transparent)`;
 const nPt = (n,s,p)=>`${n} ${n===1?s:p}`;
 
 /* — Equipa hoje — */
+/** Diferença horária de um país face a Portugal, ex.: "+1h", "-5h", "+9h30", "0h". */
+function difFusoPT(pais){
+  const fuso=PAIS_FUSO[semAcento(pais)]; if(!fuso) return '';
+  const agora=new Date(), d=minutosFuso(fuso,agora)-minutosFuso('Europe/Lisbon',agora);
+  if(!d) return '0h';
+  const t=Math.abs(d), h=Math.floor(t/60), m=t%60;
+  return `${d>0?'+':'-'}${h}h${m?String(m).padStart(2,'0'):''}`;
+}
 function renderEquipa(){
   const el=document.getElementById('tm-equipa'); if(!el) return;
   const grupos = ORDER.map(k=>{
@@ -1748,7 +1760,7 @@ function renderEquipa(){
   const compact = grupos.some(g=>g.list.length>2);              // com 2 linhas cheias, pessoas um pouco mais pequenas
   const cols = grupos.map(({k,list})=>{
     const st=STATUS[k];
-    const lado = compact?76:88, rows = list.length<=3 ? 1 : 2, cols = Math.max(1,Math.ceil(list.length/rows)), base = Math.max(140, 34+cols*lado);   // no máximo 2 linhas: cresce na horizontal
+    const lado = k==='viagem' ? (compact?112:124) : (compact?76:88), rows = list.length<=3 ? 1 : 2, cols = Math.max(1,Math.ceil(list.length/rows)), base = Math.max(140, 34+cols*lado);   // no máximo 2 linhas: cresce na horizontal
     const pessoas = list.length ? list.map(m=>{
       if(k==='visitas'){
         const lh = m.planoVisita?.linha||{};
@@ -1759,7 +1771,9 @@ function renderEquipa(){
           <div><div class="n">${esc(nome)}</div><div class="s">${esc(lh.pais||shortName(m.name))}</div></div></div>`;
       }
       const pais = k==='viagem' ? (m.plano?.pais||m.plano?.linha?.pais||'') : '';
-      return `<div class="tm-pp"><div class="tm-av"><span class="ini">${esc(initials(m.name))}</span>${m.photo?`<img src="${esc(m.photo)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>
+      const fz = pais ? difFusoPT(pais) : '';
+      const av = `<div class="tm-av"><span class="ini">${esc(initials(m.name))}</span>${m.photo?`<img src="${esc(m.photo)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>`;
+      return `<div class="tm-pp${fz?' fz':''}">${fz?`<div class="tm-avrow">${av}<span class="tm-fz" title="Diferença horária face a Portugal">${fz}</span></div>`:av}
         <div><div class="n">${esc(shortName(m.name))}</div>${pais?`<div class="s">${esc(pais)}</div>`:''}</div></div>`;
     }).join('') : `<div class="tm-empty">Sem registos</div>`;
     return `<div class="g-zone tm-g" style="--c:${COR_EST[k]};flex:1 1 calc(${base}*var(--u));min-width:calc(${base}*var(--u))">
