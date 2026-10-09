@@ -1096,6 +1096,21 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 .tm-wr .cl{font-size:calc(20*var(--u));font-weight:700;letter-spacing:-.025em;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tm-wr .id{font-size:calc(16*var(--u));color:var(--text-2)}
 
+
+/* ── Telemóvel: Instalações e WashLab empilhados (mesmos cartões da TV) ── */
+.tmph{--u:calc(min(100vw,520px)/490);flex:none;min-height:0;margin-top:16px;padding:16px;border-radius:22px}
+.tmph .tm-sh{margin-bottom:12px}
+.tmph .sub,.tmph .tm-ic .sub{text-transform:none}
+.tmph .tm-sh h2{font-size:calc(26*var(--u))}
+.tmph .tm-ibody{flex-direction:column;gap:16px}
+.tmph .tm-donut{width:100%;flex-direction:row;align-items:center;gap:18px}
+.tmph .tm-ring{width:calc(180*var(--u));height:calc(180*var(--u))}
+.tmph .tm-leg{flex:1;min-width:0}
+.tmph .tm-icols{flex-direction:column;gap:18px}
+.tmph .tm-ic h3{font-size:calc(24*var(--u))}
+.tmph .tm-it h4{font-size:calc(22*var(--u))}
+.tmph .tm-it .l{font-size:calc(18*var(--u))}
+.tmph .tm-wl{overflow:visible}
 </style>
 </head>
 <body>
@@ -1138,7 +1153,7 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
   <div class="tm-body">
     <div class="tm-left">
       <section class="g-zone tm-sec" id="tm-equipa" style="order:1" aria-labelledby="h-eq"></section>
-      <section class="g-zone tm-sec" id="tm-inst" style="order:2;flex:1.08 1 0" aria-labelledby="h-inst"></section>
+      <section class="g-zone tm-sec" id="tm-inst" style="order:2;flex:1.08 1 0" aria-labelledby="h-tm-inst"></section>
     </div>
     <div class="tm-right">
       <section class="g-zone tm-sec tm-mapsec" aria-labelledby="h-map">
@@ -1149,7 +1164,7 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
           <span><i class="lg-i"></i>Instalações em curso</span>
         </div>
       </section>
-      <section class="g-zone tm-sec tm-washsec" id="tm-wash" aria-labelledby="h-wl"></section>
+      <section class="g-zone tm-sec tm-washsec" id="tm-wash" aria-labelledby="h-tm-wash"></section>
     </div>
   </div>
 </div>
@@ -1178,7 +1193,7 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 
   <!-- EQUIPA -->
   <section class="ph pv on" id="pv-equipa">
-    <h1>BIZDEV <i>team</i></h1>
+    <h1>Team <i>Management</i></h1>
     <div class="sub" id="ph-date">—</div>
 
     <div class="sumcard">
@@ -1187,6 +1202,8 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
     </div>
 
     <div id="ph-groups"></div>
+    <section class="g-zone tm-sec tmph" id="ph-inst" aria-label="Instalações"></section>
+    <section class="g-zone tm-sec tmph" id="ph-wash" aria-label="Ensaios WashLab"></section>
   </section>
 
   <!-- MAPA -->
@@ -1664,6 +1681,7 @@ const PAT_DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidde
   <pattern id="pt-transporte" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" style="fill:color-mix(in srgb, var(--accent) 62%, var(--surface))"/><circle cx="5" cy="5" r="2.4" fill="#fff" fill-opacity=".8"/></pattern>
   <pattern id="pt-planeamento" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" style="fill:color-mix(in srgb, var(--accent) 30%, var(--surface))"/><path d="M0 4H8M4 0V8" style="stroke:var(--text)" stroke-opacity=".55" stroke-width="1.4"/></pattern>
 </defs></svg>`;
+document.body.insertAdjacentHTML('afterbegin',PAT_DEFS);   // uma só vez: os padrões servem a TV e o telemóvel
 const swatchPat = id=>`<svg class="sw" viewBox="0 0 14 14" aria-hidden="true"><g transform="scale(.6)"><rect width="23.4" height="23.4" rx="6.5" fill="url(#${id})"/></g></svg>`;
 function donutSvg(segs,total){
   const R=85, C=98, W=26, g=segs.filter(x=>x[0]>0).length>1?1.2:0;
@@ -1684,10 +1702,11 @@ function ringSvg(p,id){
   return `<svg viewBox="0 0 60 60" class="rs" aria-hidden="true"><circle cx="30" cy="30" r="${R}" fill="none" style="stroke:var(--fill-2)" stroke-width="8"/>`
    + (v>0?`<circle cx="30" cy="30" r="${R}" fill="none" stroke="url(#${id})" stroke-width="8" stroke-dasharray="${(L*v/100).toFixed(2)} ${L.toFixed(2)}" transform="rotate(-90 30 30)"/>`:'')+`</svg>`;
 }
-function renderInstalacoes(){
-  const el=document.getElementById('tm-inst'); if(!el) return;
+function renderInstalacoes(id='tm-inst', MAX=2){
+  const el=document.getElementById(id); if(!el) return;
+  const hid='h-'+id;
   const cab = `<div class="tm-sh"><div class="sq" style="background:var(--accent)">${SVG_(IC_PATH.caixa)}</div>
-    <div><h2 id="h-inst">Instalações</h2><div class="sub">Estado dos equipamentos, do planeamento à instalação</div></div></div>`;
+    <div><h2 id="${hid}">Instalações</h2><div class="sub">Estado dos equipamentos, do planeamento à instalação</div></div></div>`;
   if(!INST.ok){
     el.innerHTML = cab + `<div class="tm-empty">${INST.tentou?'Sem ligação aos dados das instalações':'A carregar instalações…'}</div>`;
     return;
@@ -1713,7 +1732,6 @@ function renderInstalacoes(){
     const l2=[r.pais&&r.pais!=='Global'?r.pais:'', r.tecnico&&r.tecnico!=='-'?r.tecnico:''].filter(Boolean).map(esc).join(' · ');
     return `<article class="g-card tm-it">${esq}<div class="tx">${pill}<h4>${esc(r.cliente)}</h4><div class="l">${l1}</div><div class="l">${l2?`<span>${l2}</span>`:''}</div></div></article>`;
   };
-  const MAX=2;
   const colunas = [
     {t:'Planeamento', s:'Próximas intervenções', n:planeam, col:'var(--text)', items:[...INST.aguardo.map(r=>[r,'aguardo']),...INST.agendada.map(r=>[r,'agendada'])]},
     {t:'Em transporte', s:'Trânsito de equipamentos', n:c.transporte, col:'var(--accent)', items:INST.transporte.map(r=>[r,'transporte'])},
@@ -1725,7 +1743,7 @@ function renderInstalacoes(){
       ${resto>0?`<div class="tm-more">e mais ${nPt(resto,'lote','lotes')}</div>`:''}</div>`;
   }).join('');
 
-  el.innerHTML = PAT_DEFS + cab + `<div class="tm-ibody">
+  el.innerHTML = cab + `<div class="tm-ibody">
     <div class="tm-donut"><div class="tm-ring" role="img" aria-label="${total} instalações: ${c.concluida} concluídas, ${c.instalacao} em instalação, ${c.transporte} em transporte, ${planeam} em gestão e planeamento">
       ${donut}<div class="c"><b>${pct}%</b><span>de ${total} concluídas</span></div></div>
       <div class="tm-leg">${legend}</div></div>
@@ -1734,15 +1752,16 @@ function renderInstalacoes(){
 
 /* — Ensaios WashLab (fonte: multiwasher/wash) — */
 const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-function renderWash(){
-  const el=document.getElementById('tm-wash'); if(!el) return;
+function renderWash(id='tm-wash', N=5){
+  const el=document.getElementById(id); if(!el) return;
+  const hid='h-'+id;
   const cab = `<div class="tm-sh"><div class="sq" style="background:var(--wash)">${SVG_(IC_PATH.frasco)}</div>
-    <div><h2 id="h-wl">Ensaios WashLab</h2><div class="sub">Relatórios mais recentes</div></div></div>`;
+    <div><h2 id="${hid}">Ensaios WashLab</h2><div class="sub">Relatórios mais recentes</div></div></div>`;
   if(!WASH.ok){
     el.innerHTML = cab + `<div class="tm-empty">${WASH.tentou?'Sem ligação aos relatórios WashLab':'A carregar relatórios…'}</div>`;
     return;
   }
-  const rows = WASH.lista.slice(0,5).map(r=>{
+  const rows = WASH.lista.slice(0,N).map(r=>{
     const m = String(r.data||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
     const dia = m?m[3]:'--', mes = m?MESES_PT[+m[2]-1]:'';
     return `<div class="g-card tm-wr"><div class="dt"><b>${dia}</b><span>${mes}</span></div>
@@ -1987,9 +2006,14 @@ async function lerWash(){
   WASH.lista = lista.sort((a,b)=>b.data.localeCompare(a.data) || b.n-a.n);
   WASH.ok=true; return true;
 }
+function renderExternos(){
+  renderInstalacoes(); renderWash();                 // TV
+  renderInstalacoes('ph-inst',3); renderWash('ph-wash',5);   // telemóvel
+}
 async function sincronizarExternos(){
   await Promise.all([lerInstalacoes(), lerWash()]);
-  if(MODE==='tv'){ renderInstalacoes(); renderWash(); drawMap('tvmap'); }
+  renderExternos();
+  if(MODE==='tv') drawMap('tvmap');
 }
 
 /** `count` = quantas pessoas partilham este pin (mostra uma label ao lado quando >1). */
@@ -2243,7 +2267,7 @@ function showPhoneView(v){
   ['equipa','mapa','registo'].forEach(k=>document.getElementById('pt-'+k).setAttribute('aria-selected',String(k===v)));
   window.scrollTo({top:0});
   if(v==='mapa') setTimeout(()=>drawMap('ph-map'),80);
-  if(v==='equipa') renderPhoneBoard();
+  if(v==='equipa'){ renderPhoneBoard(); renderExternos(); }
 }
 
 const ORDER_CHECKIN = ['fabrica','home','viagem','ferias'];   // visitas inversas entram só pelo planeamento
@@ -4221,7 +4245,7 @@ setInterval(()=>{
   tvClock();
   sincronizar().then(ok=>{ if(!ok){ loadState(); renderTV(); drawMap('tvmap'); } });
 }, REFRESH_MS);
-setInterval(()=>{ if(MODE==='tv') sincronizarExternos(); }, 5*60*1000);   // dat e WashLab mudam devagar
+setInterval(sincronizarExternos, 5*60*1000);   // dat e WashLab mudam devagar
 setInterval(()=>{ if(MODE==='tv') tvClock(); }, 15000);
 
 /* ═══ Recarga periódica ═══
