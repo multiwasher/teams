@@ -1756,7 +1756,7 @@ function renderEquipa(){
       return `<div class="tm-pp"><div class="tm-av"><span class="ini">${esc(initials(m.name))}</span>${m.photo?`<img src="${esc(m.photo)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>
         <div><div class="n">${esc(shortName(m.name))}</div>${pais?`<div class="s">${esc(pais)}</div>`:''}</div></div>`;
     }).join('') : `<div class="tm-empty">Sem registos</div>`;
-    return `<div class="g-zone tm-g" style="--c:${COR_EST[k]};flex:${cols} 1 calc(${base}*var(--u));min-width:calc(${base}*var(--u))">
+    return `<div class="g-zone tm-g" style="--c:${COR_EST[k]};flex:1 1 calc(${base}*var(--u));min-width:calc(${base}*var(--u))">
       <div class="gh"><div class="gi">${SVG_(IC_PATH[k])}</div><div class="gn">${list.length}</div></div>
       <div class="gl">${esc(st.label)}</div>
       <div class="tm-ppl" style="--rows:${rows}">${pessoas}</div></div>`;
