@@ -1064,6 +1064,7 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 .tm-ic .cn{font-size:calc(50*var(--u));font-weight:700;letter-spacing:-.05em;line-height:.9}
 .tm-it{border-radius:calc(20*var(--u));padding:calc(14*var(--u)) calc(16*var(--u));display:flex;align-items:center;gap:calc(14*var(--u))}
 .tm-it .rg{position:relative;width:calc(60*var(--u));height:calc(60*var(--u));flex:none}
+.tm-it .rg .rs{position:absolute;inset:0;width:100%;height:100%}
 .tm-it .rg .r{position:absolute;inset:0;border-radius:50%;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - calc(8*var(--u))),#000 calc(100% - calc(7*var(--u))));mask:radial-gradient(farthest-side,transparent calc(100% - calc(8*var(--u))),#000 calc(100% - calc(7*var(--u))))}
 .tm-it .rg b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:calc(16*var(--u));font-weight:700;letter-spacing:-.03em}
 .tm-it .ic{width:calc(60*var(--u));height:calc(60*var(--u));border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center}
@@ -1678,6 +1679,11 @@ function donutSvg(segs,total){
   });
   return `<svg viewBox="0 0 196 196" class="rs" aria-hidden="true">${out}</svg>`;
 }
+function ringSvg(p,id){
+  const v=Math.max(0,Math.min(100,+p||0)), R=26, L=2*Math.PI*R;
+  return `<svg viewBox="0 0 60 60" class="rs" aria-hidden="true"><circle cx="30" cy="30" r="${R}" fill="none" style="stroke:var(--fill-2)" stroke-width="8"/>`
+   + (v>0?`<circle cx="30" cy="30" r="${R}" fill="none" stroke="url(#${id})" stroke-width="8" stroke-dasharray="${(L*v/100).toFixed(2)} ${L.toFixed(2)}" transform="rotate(-90 30 30)"/>`:'')+`</svg>`;
+}
 function renderInstalacoes(){
   const el=document.getElementById('tm-inst'); if(!el) return;
   const cab = `<div class="tm-sh"><div class="sq" style="background:var(--accent)">${SVG_(IC_PATH.caixa)}</div>
@@ -1701,7 +1707,7 @@ function renderInstalacoes(){
       esq = `<div class="ic" style="color:${col};background:${mixc(col,warn?16:18)}">${SVG_(warn?IC_PATH.alerta:IC_PATH.cal)}</div>`;
       pill = `<div class="tm-pill" style="color:${col};background:${mixc(col,warn?16:18)}">${warn?'Aguardo info cliente':'Instalação agendada'}</div>`;
     } else {
-      esq = `<div class="rg"><div class="r" style="background:${ring(r.percent)}"></div><b>${r.percent}%</b></div>`;
+      esq = `<div class="rg">${ringSvg(r.percent,'pt-'+tipo)}<b>${r.percent}%</b></div>`;
     }
     const l1=r.lote?`<span>${esc(r.lote)}</span>`:'';
     const l2=[r.pais&&r.pais!=='Global'?r.pais:'', r.tecnico&&r.tecnico!=='-'?r.tecnico:''].filter(Boolean).map(esc).join(' · ');
