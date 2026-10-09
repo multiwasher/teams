@@ -1026,7 +1026,7 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 .tm-g .gi svg{width:calc(21*var(--u));height:calc(21*var(--u))}
 .tm-g .gn{font-size:calc(40*var(--u));font-weight:700;letter-spacing:-.05em;line-height:1;color:var(--c)}
 .tm-g .gl{font-size:calc(18*var(--u));font-weight:600;letter-spacing:-.02em;margin:calc(8*var(--u)) 0 calc(12*var(--u));line-height:1.2}
-.tm-ppl{display:flex;flex-wrap:wrap;gap:calc(10*var(--u)) calc(8*var(--u));align-content:flex-start}
+.tm-ppl{display:grid;grid-template-rows:repeat(var(--rows,2),auto);grid-auto-flow:column;grid-auto-columns:max-content;gap:calc(10*var(--u)) calc(8*var(--u));align-content:start;justify-content:start}
 .tm-pp{width:calc(80*var(--u));display:flex;flex-direction:column;align-items:center;text-align:center;gap:calc(6*var(--u))}
 .tm-av{position:relative;width:calc(64*var(--u));height:calc(64*var(--u));border-radius:50%;overflow:hidden;background:var(--fill-2);box-shadow:0 0 0 calc(3*var(--u)) var(--c);flex:none}
 .tm-av .ini{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:calc(21*var(--u));font-weight:600;color:var(--text-2)}
@@ -1037,10 +1037,13 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 .tm-pp .n{font-size:calc(15*var(--u));font-weight:600;letter-spacing:-.02em;line-height:1.15;width:100%}
 .tm-pp .s{font-size:calc(14*var(--u));color:var(--text-2);line-height:1.2;width:100%}
 .tm-groups.compact .tm-pp{width:calc(68*var(--u))}
-.tm-groups.compact .tm-ppl{gap:calc(8*var(--u)) calc(8*var(--u))}
-.tm-groups.compact .tm-av{width:calc(56*var(--u));height:calc(56*var(--u))}
+.tm-groups.compact .tm-ppl{gap:calc(6*var(--u)) calc(8*var(--u))}
+.tm-groups.compact .tm-pp{gap:calc(4*var(--u))}
+.tm-groups.compact .tm-pp .s{font-size:calc(12*var(--u))}
+.tm-groups.compact .tm-g .gl{margin:calc(6*var(--u)) 0 calc(8*var(--u))}
+.tm-groups.compact .tm-av{width:calc(52*var(--u));height:calc(52*var(--u))}
 .tm-groups.compact .tm-av .ini{font-size:calc(18*var(--u))}
-.tm-groups.compact .tm-pp .n{font-size:calc(14*var(--u))}
+.tm-groups.compact .tm-pp .n{font-size:calc(13.5*var(--u))}
 .tm-empty{font-size:calc(16*var(--u));color:var(--text-3)}
 /* instalações */
 .tm-ibody{flex:1;min-height:0;display:flex;gap:calc(28*var(--u))}
@@ -1736,10 +1739,10 @@ function renderEquipa(){
   });
   const nPessoas = members.filter(m=>m.status).length;
   const nVis = members.filter(m=>m.planoVisita).length;
-  const compact = grupos.some(g=>g.k!=='visitas' && g.list.length>4);
+  const compact = grupos.some(g=>g.list.length>2);              // com 2 linhas cheias, pessoas um pouco mais pequenas
   const cols = grupos.map(({k,list})=>{
     const st=STATUS[k];
-    const lado = compact?76:88, base = Math.max(150, 30+Math.min(Math.max(list.length,1),compact?4:3)*lado);
+    const lado = compact?76:88, rows = list.length<=3 ? 1 : 2, cols = Math.max(1,Math.ceil(list.length/rows)), base = Math.max(140, 34+cols*lado);   // no máximo 2 linhas: cresce na horizontal
     const pessoas = list.length ? list.map(m=>{
       if(k==='visitas'){
         const lh = m.planoVisita?.linha||{};
@@ -1753,10 +1756,10 @@ function renderEquipa(){
       return `<div class="tm-pp"><div class="tm-av"><span class="ini">${esc(initials(m.name))}</span>${m.photo?`<img src="${esc(m.photo)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>
         <div><div class="n">${esc(shortName(m.name))}</div>${pais?`<div class="s">${esc(pais)}</div>`:''}</div></div>`;
     }).join('') : `<div class="tm-empty">Sem registos</div>`;
-    return `<div class="g-zone tm-g" style="--c:${COR_EST[k]};flex:${Math.max(list.length,1)} 1 calc(${base}*var(--u))">
+    return `<div class="g-zone tm-g" style="--c:${COR_EST[k]};flex:${cols} 1 calc(${base}*var(--u));min-width:calc(${base}*var(--u))">
       <div class="gh"><div class="gi">${SVG_(IC_PATH[k])}</div><div class="gn">${list.length}</div></div>
       <div class="gl">${esc(st.label)}</div>
-      <div class="tm-ppl">${pessoas}</div></div>`;
+      <div class="tm-ppl" style="--rows:${rows}">${pessoas}</div></div>`;
   }).join('');
   el.innerHTML = `<div class="tm-sh"><div class="sq" style="background:var(--blue)">${SVG_(IC_PATH.pessoas)}</div>
     <div><h2 id="h-eq">Equipa hoje</h2><div class="sub">${nPt(nPessoas,'pessoa','pessoas')}${nVis?` e ${nPt(nVis,'visita planeada','visitas planeadas')}`:''}</div></div></div>
