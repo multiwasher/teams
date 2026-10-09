@@ -1069,7 +1069,8 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 .tm-it .ic svg{width:calc(28*var(--u));height:calc(28*var(--u))}
 .tm-it .tx{flex:1;min-width:0}
 .tm-it h4{margin:0;font-size:calc(20*var(--u));font-weight:700;letter-spacing:-.025em;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tm-it .l{display:flex;flex-wrap:wrap;gap:0 calc(12*var(--u));font-size:calc(16*var(--u));color:var(--text-2);line-height:1.3}
+.tm-it .l{display:block;font-size:calc(16*var(--u));color:var(--text-2);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.3em}
+.tm-it .l span{display:block;overflow:hidden;text-overflow:ellipsis}
 
 .tm-pill{display:inline-block;font-size:calc(14*var(--u));font-weight:600;border-radius:99px;padding:calc(1*var(--u)) calc(10*var(--u));margin-bottom:calc(3*var(--u))}
 .tm-more{font-size:calc(16*var(--u));color:var(--text-2);padding:0 calc(4*var(--u))}
@@ -1681,9 +1682,9 @@ function renderInstalacoes(){
     } else {
       esq = `<div class="rg"><div class="r" style="background:${ring(r.percent)}"></div><b>${r.percent}%</b></div>`;
     }
-    const l1=[r.lote?`Lote ${esc(r.lote)}`:'', r.pais&&r.pais!=='Global'?esc(r.pais):''].filter(Boolean).map(t=>`<span>${t}</span>`).join('');
-    const l2=[r.tecnico&&r.tecnico!=='-'?esc(r.tecnico):'', r.serie?`Série ${esc(r.serie)}`:''].filter(Boolean).map(t=>`<span>${t}</span>`).join('');
-    return `<article class="g-card tm-it">${esq}<div class="tx">${pill}<h4>${esc(r.cliente)}</h4><div class="l">${l1}</div><div class="l">${l2}</div></div></article>`;
+    const l1=r.lote?`<span>${esc(r.lote)}</span>`:'';
+    const l2=[r.pais&&r.pais!=='Global'?r.pais:'', r.tecnico&&r.tecnico!=='-'?r.tecnico:''].filter(Boolean).map(esc).join(' · ');
+    return `<article class="g-card tm-it">${esq}<div class="tx">${pill}<h4>${esc(r.cliente)}</h4><div class="l">${l1}</div><div class="l">${l2?`<span>${l2}</span>`:''}</div></div></article>`;
   };
   const MAX=2;
   const colunas = [
