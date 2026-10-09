@@ -2420,10 +2420,37 @@ async function enviarParaSheet(payload){
   }
 }
 
-/** Lê as duas folhas e reconstrói estados, contagens e histórico. */
+/* Folha da equipa (Google Sheets, partilhada para leitura): separadores
+   onboarding, planning e visits. Lida diretamente em CSV; o Apps Script fica de reserva. */
+const EQUIPA_SHEET_ID = "1Fua0xkGpNYN2iJajUMChg8rdVB4UNf9Q6owSGZ9X_04";
+const EQUIPA_ABAS = {dados:'onboarding', planeado:'planning', visitas:'visits'};
+function equipaCsvParaLinhas(action, rows){
+  if(!rows.length) return [];
+  const H = rows[0].map(h=>semAcentos(String(h||'').replace(/^\uFEFF/,'')).toLowerCase().trim());
+  const ix = (...n)=>{ for(const x of n){ const i=H.indexOf(x); if(i!==-1) return i; } return -1; };
+  const iT=Math.max(ix('data / hora','data/hora','data'),0), iM=ix('comercial'), iL=ix('local de trabalho'), iS=ix('substituto'),
+        iLa=ix('latitude'), iLo=ix('longitude'), iO=ix('observacoes'), iLg=ix('logo'), iP=ix('pais'), iC=ix('cliente'),
+        iD=ix('dia planeado'), iV=ix('visita');
+  if(iM===-1) throw new Error('cabeçalhos inesperados em '+EQUIPA_ABAS[action]);
+  const g=(r,i)=>i===-1?'':String(r[i]||'').trim();
+  const out=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i]; if(!g(r,iM)) continue;
+    if(action==='dados')         out.push({time:g(r,iT), memberName:g(r,iM), statusLabel:g(r,iL), subName:g(r,iS), lat:g(r,iLa), lng:g(r,iLo), obs:g(r,iO), logo:g(r,iLg)});
+    else if(action==='planeado') out.push({time:g(r,iT), memberName:g(r,iM), statusLabel:g(r,iL), pais:g(r,iP), cliente:g(r,iC), dia:g(r,iD), subName:g(r,iS), lat:g(r,iLa), lng:g(r,iLo), obs:g(r,iO), logo:g(r,iLg)});
+    else                         out.push({time:g(r,iT), memberName:g(r,iM), pais:g(r,iP), visita:g(r,iV), dia:g(r,iD), logo:g(r,iLg)});
+  }
+  return out;
+}
 async function lerAccao(action){
-  if(!GOOGLE_SCRIPT_URL) return null;
   try{
+    const url = `https://docs.google.com/spreadsheets/d/${EQUIPA_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(EQUIPA_ABAS[action])}&headers=1&t=${Date.now()}`;
+    const r = await fetch(url,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return equipaCsvParaLinhas(action, parseCsv(await r.text()));
+  }catch(e){ if(DEBUG) console.warn('folha da equipa (CSV):',action,e); }
+  if(!GOOGLE_SCRIPT_URL) return null;
+  try{                                     // reserva: Apps Script
     const r = await fetch(GOOGLE_SCRIPT_URL+'?action='+action,{cache:'no-store'});
     const d = await r.json();
     return (d && Array.isArray(d.rows)) ? d.rows : null;
