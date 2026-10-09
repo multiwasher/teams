@@ -1111,6 +1111,9 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 .tmph .tm-it h4{font-size:calc(22*var(--u))}
 .tmph .tm-it .l{font-size:calc(18*var(--u))}
 .tmph .tm-wl{overflow:visible}
+.tm-lbl{flex:none;font-size:calc(14*var(--u));font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);margin:calc(2*var(--u)) calc(4*var(--u)) 0}
+.tm-wr .dt.prox{background:color-mix(in srgb, var(--wash) 18%, transparent)}
+.tm-wr .dt.prox b{color:var(--wash)}
 </style>
 </head>
 <body>
@@ -1752,26 +1755,35 @@ function renderInstalacoes(id='tm-inst', MAX=2){
 
 /* — Ensaios WashLab (fonte: multiwasher/wash) — */
 const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-function renderWash(id='tm-wash', N=5){
+function renderWash(id='tm-wash', N=5, U=3){
   const el=document.getElementById(id); if(!el) return;
   const hid='h-'+id;
   const cab = `<div class="tm-sh"><div class="sq" style="background:var(--wash)">${SVG_(IC_PATH.frasco)}</div>
-    <div><h2 id="${hid}">Ensaios WashLab</h2><div class="sub">Relatórios mais recentes</div></div></div>`;
+    <div><h2 id="${hid}">Ensaios WashLab</h2><div class="sub">${CAL.ok&&CAL.lista.length?'Próximos ensaios e relatórios recentes':'Relatórios mais recentes'}</div></div></div>`;
+  const chip=(dia,cls='')=>{
+    const m=String(dia||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return `<div class="dt${cls}"><b>${m?m[3]:'--'}</b><span>${m?MESES_PT[+m[2]-1]:''}</span></div>`;
+  };
+  const hoje=isoHoje();
+  const prox = CAL.ok ? CAL.lista.filter(e=>e.dia>=hoje).slice(0,U) : [];
+  let html='';
+  if(prox.length){
+    html += `<div class="tm-lbl">Próximos ensaios</div>` + prox.map(e=>`<div class="g-card tm-wr cal">${chip(e.dia,' prox')}
+      <div class="tx"><div class="cl">${esc(e.titulo)}</div><div class="id">${e.dia===hoje?'Hoje':''}${e.dia===hoje&&e.hora?' · ':''}${esc(e.hora||(e.dia===hoje?'':'Dia todo'))}</div></div></div>`).join('');
+  }
   if(!WASH.ok){
-    el.innerHTML = cab + `<div class="tm-empty">${WASH.tentou?'Sem ligação aos relatórios WashLab':'A carregar relatórios…'}</div>`;
+    el.innerHTML = cab + `<div class="tm-wl">${html}<div class="tm-empty">${WASH.tentou?'Sem ligação aos relatórios WashLab':'A carregar relatórios…'}</div></div>`;
     return;
   }
-  const rows = WASH.lista.slice(0,N).map(r=>{
-    const m = String(r.data||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
-    const dia = m?m[3]:'--', mes = m?MESES_PT[+m[2]-1]:'';
-    return `<div class="g-card tm-wr"><div class="dt"><b>${dia}</b><span>${mes}</span></div>
-      <div class="tx"><div class="cl">${esc(r.cliente||'—')}</div><div class="id">${esc(r.id||'')}</div></div></div>`;
-  }).join('');
-  el.innerHTML = cab + `<div class="tm-wl" role="list" aria-label="Relatórios de ensaio WashLab">${rows||'<div class="tm-empty">Sem relatórios</div>'}</div>`;
+  const n = prox.length ? Math.max(2,N-prox.length) : N;
+  const rows = WASH.lista.slice(0,n).map(r=>`<div class="g-card tm-wr">${chip(r.data)}
+      <div class="tx"><div class="cl">${esc(r.cliente||'—')}</div><div class="id">${esc(r.id||'')}</div></div></div>`).join('');
+  if(prox.length) html += `<div class="tm-lbl">Relatórios recentes</div>`;
+  el.innerHTML = cab + `<div class="tm-wl" role="list" aria-label="Ensaios WashLab">${html}${rows||'<div class="tm-empty">Sem relatórios</div>'}</div>`;
 }
 
 function renderTV(){
-  renderEquipa(); renderInstalacoes(); renderWash();
+  renderEquipa(); renderInstalacoes(); renderWash('tm-wash',4,2);
 }
 
 /* ═══ Fontes externas (só leitura, lidas diretamente no browser) ═══ */
@@ -2007,11 +2019,31 @@ async function lerWash(){
   WASH.ok=true; return true;
 }
 function renderExternos(){
-  renderInstalacoes(); renderWash();                 // TV
-  renderInstalacoes('ph-inst',3); renderWash('ph-wash',5);   // telemóvel
+  renderInstalacoes(); renderWash('tm-wash',4,2);    // TV
+  renderInstalacoes('ph-inst',3); renderWash('ph-wash',6,3);   // telemóvel
+}
+/* Calendário Google dos ensaios WashLab (público). Para ativar: criar uma chave de API no
+   Google Cloud (Calendar API ativa, restrita a este site) e colocá-la em CAL_API_KEY. */
+const CAL_ID = "c_d89img0gp1ijoqa6t2bh53hmqs@group.calendar.google.com";
+const CAL_API_KEY = "";
+const CAL = {ok:false, lista:[]};
+async function lerCalendario(){
+  if(!CAL_API_KEY) return false;
+  try{
+    const ini=new Date(); ini.setHours(0,0,0,0);
+    const url=`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CAL_ID)}/events?key=${encodeURIComponent(CAL_API_KEY)}&singleEvents=true&orderBy=startTime&maxResults=8&timeMin=${encodeURIComponent(ini.toISOString())}`;
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    CAL.lista=(d.items||[]).filter(e=>e.status!=='cancelled').map(e=>{
+      const st=e.start||{}, dt=st.dateTime||'', dia=(st.date||dt).slice(0,10);
+      return {dia, hora:dt?dt.slice(11,16):'', titulo:e.summary||'(sem título)'};
+    }).filter(e=>e.dia);
+    CAL.ok=true; return true;
+  }catch(e){ if(DEBUG) console.warn('calendário:',e); return false; }
 }
 async function sincronizarExternos(){
-  await Promise.all([lerInstalacoes(), lerWash()]);
+  await Promise.all([lerInstalacoes(), lerWash(), lerCalendario()]);
   renderExternos();
   if(MODE==='tv') drawMap('tvmap');
 }
