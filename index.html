@@ -1114,6 +1114,30 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 .tm-lbl{flex:none;font-size:calc(14*var(--u));font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);margin:calc(2*var(--u)) calc(4*var(--u)) 0}
 .tm-wr .dt.prox{background:color-mix(in srgb, var(--wash) 18%, transparent)}
 .tm-wr .dt.prox b{color:var(--wash)}
+/* ── Calendário de ensaios WashLab ── */
+#wcal-scrim{position:fixed;inset:0;z-index:205;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:3vh 2vw}
+#wcal-scrim.on{display:flex;animation:fadein .25s ease}
+#wcal-sheet{width:min(520px,94vw);max-height:90vh;overflow-y:auto;border-radius:26px;padding:0 0 20px}
+html.tv #wcal-sheet{zoom:clamp(1,.115vh,2.2)}
+#wcal-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;padding:18px 20px 14px;background:var(--surface);border-bottom:1px solid var(--sep)}
+#wcal-head .sq{width:44px;height:44px;border-radius:13px;background:var(--wash);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+#wcal-head .sq svg{width:24px;height:24px}
+#wcal-head h3{margin:0;font-size:18px;font-weight:700;letter-spacing:-.024em}
+#wcal-sub{font-size:13px;color:var(--text-2);margin-top:1px}
+#wcal-head .x{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--fill);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+#wcal-body{padding:0 20px}
+#wcal-title{text-transform:none!important}
+#wcal-grid .d.ens{background:color-mix(in srgb,var(--wash) 20%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--wash) 45%,transparent)}
+#wcal-grid .d .tag{font-size:9px;font-weight:600;letter-spacing:.02em}
+#wcal-lista{margin-top:10px}
+#wcal-lista .linha{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:.5px solid var(--sep);font-size:13px}
+#wcal-lista .linha b{color:var(--text);font-weight:600;min-width:104px;font-variant-numeric:tabular-nums}
+#wcal-lista .linha span{color:var(--text-2);flex:1;min-width:0}
+#wcal-lista .linha.passado{opacity:.55}
+#wcal-vazio{padding:20px 4px;font-size:13px;color:var(--text-2);text-align:center}
+.tm-lbl.clic{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.tm-lbl.clic i{font-style:normal;text-transform:none;letter-spacing:0;color:var(--wash);font-weight:600}
+.tm-wr.cal{cursor:pointer}
 </style>
 </head>
 <body>
@@ -1339,6 +1363,28 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
         <div id="trip-warn"></div>
         <div class="tlist"><h4 id="tlist-title">Próximas viagens</h4><div id="tlist"></div></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="wcal-scrim" onclick="if(event.target===this)closeWashCal()">
+  <div id="wcal-sheet" class="glass" role="dialog" aria-modal="true" aria-label="Calendário de ensaios WashLab">
+    <div id="wcal-head">
+      <div class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6 M10 3v6.2L4.6 18.4A1.6 1.6 0 0 0 6 21h12a1.6 1.6 0 0 0 1.4-2.6L14 9.2V3 M7.4 14.4h9.2"/></svg></div>
+      <div style="min-width:0">
+        <h3>Calendário de ensaios</h3>
+        <div id="wcal-sub"></div>
+      </div>
+      <button class="x" onclick="closeWashCal()" aria-label="Fechar"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+    <div id="wcal-body">
+      <div class="tcal-head">
+        <button class="cal-nav" onclick="washCalMes(-1)" aria-label="Mês anterior">‹</button>
+        <b id="wcal-title">—</b>
+        <button class="cal-nav" onclick="washCalMes(1)" aria-label="Mês seguinte">›</button>
+      </div>
+      <div class="tcal" id="wcal-grid"></div>
+      <div id="wcal-lista"></div>
     </div>
   </div>
 </div>
@@ -1769,12 +1815,12 @@ function renderWash(id='tm-wash', N=5, U=3){
   const comCal = !!CAL_API_KEY && (CAL.ok || CAL.tentou);
   let html='';
   if(comCal){
-    html += `<div class="tm-lbl">Próximos ensaios</div>`;
+    html += `<div class="tm-lbl${CAL.ok?' clic':''}"${CAL.ok?' onclick="openWashCal()"':''}>Próximos ensaios${CAL.ok?' <i>Ver calendário ›</i>':''}</div>`;
     if(!CAL.ok) html += `<div class="tm-empty">Calendário indisponível<br><small>${esc(CAL.erro.slice(0,90))}</small></div>`;
     else if(!prox.length) html += `<div class="tm-empty">Sem ensaios agendados</div>`;
   }
   if(prox.length){
-    html += prox.map(e=>`<div class="g-card tm-wr cal">${chip(e.dia,' prox')}
+    html += prox.map(e=>`<div class="g-card tm-wr cal" onclick="openWashCal()">${chip(e.dia,' prox')}
       <div class="tx"><div class="cl">${esc(e.titulo)}</div><div class="id">${e.dia===hoje?'Hoje':''}${e.dia===hoje&&e.hora?' · ':''}${esc(e.hora||(e.dia===hoje?'':'Dia todo'))}</div></div></div>`).join('');
   }
   if(!WASH.ok){
@@ -2036,8 +2082,9 @@ const CAL = {ok:false, tentou:false, erro:'', lista:[]};
 async function lerCalendario(){
   if(!CAL_API_KEY) return false;
   try{
-    const ini=new Date(); ini.setHours(0,0,0,0);
-    const url=`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CAL_ID)}/events?key=${encodeURIComponent(CAL_API_KEY)}&singleEvents=true&orderBy=startTime&maxResults=8&timeMin=${encodeURIComponent(ini.toISOString())}`;
+    const ini=new Date(); ini.setHours(0,0,0,0); ini.setDate(1); ini.setMonth(ini.getMonth()-2);   // dois meses para trás, um ano para a frente
+    const fim=new Date(ini); fim.setMonth(fim.getMonth()+15);
+    const url=`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CAL_ID)}/events?key=${encodeURIComponent(CAL_API_KEY)}&singleEvents=true&orderBy=startTime&maxResults=250&timeMin=${encodeURIComponent(ini.toISOString())}&timeMax=${encodeURIComponent(fim.toISOString())}`;
     CAL.tentou=true;
     const r=await fetch(url,{cache:'no-store'});
     const d=await r.json().catch(()=>({}));
@@ -2464,7 +2511,7 @@ addEventListener('resize',()=>{
     if(want !== MODE) applyMode(want);     // ex.: tablet a rodar entre retrato e paisagem
   }, 250);
 });
-addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeRegModal(); closePlanModal(); closeMapModal(); closePersonCal(); closePersonInsights(); closeInsights(); closeInsightsGate(); } });
+addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeRegModal(); closePlanModal(); closeMapModal(); closePersonCal(); closeWashCal(); closePersonInsights(); closeInsights(); closeInsightsGate(); } });
 addEventListener('orientationchange',()=>setTimeout(()=>dispatchEvent(new Event('resize')),300));
 
 /* ═══ Google Sheets ═══ */
@@ -3315,6 +3362,37 @@ function seguinte(t){
 
 /* ═══ Calendário individual ═══ */
 let pcalId=null, pcalRef=new Date();
+
+/* ── Calendário de ensaios WashLab (Google Calendar) ── */
+let wcalRef=new Date();
+function openWashCal(){
+  if(!CAL.ok) return;
+  wcalRef=new Date(); renderWashCal();
+  document.getElementById('wcal-scrim').classList.add('on');
+}
+function closeWashCal(){ document.getElementById('wcal-scrim').classList.remove('on'); }
+function washCalMes(n){ wcalRef=new Date(wcalRef.getFullYear(),wcalRef.getMonth()+n,1); renderWashCal(); }
+function renderWashCal(){
+  const ano=wcalRef.getFullYear(), mes=wcalRef.getMonth();
+  const chave=`${ano}-${String(mes+1).padStart(2,'0')}`, hoje=isoHoje();
+  const t=wcalRef.toLocaleDateString('pt-PT',{month:'long',year:'numeric'});
+  document.getElementById('wcal-title').textContent=t.charAt(0).toUpperCase()+t.slice(1);
+  const doMes=CAL.lista.filter(e=>e.dia.startsWith(chave));
+  const porDia=new Map(); doMes.forEach(e=>{ if(!porDia.has(e.dia)) porDia.set(e.dia,[]); porDia.get(e.dia).push(e); });
+  document.getElementById('wcal-sub').textContent = doMes.length ? nPt(doMes.length,'ensaio','ensaios')+' neste mês' : 'Sem ensaios neste mês';
+  const desloca=(new Date(ano,mes,1).getDay()+6)%7, nDias=new Date(ano,mes+1,0).getDate();
+  let html=['S','T','Q','Q','S','S','D'].map(d=>`<div class="wd">${d}</div>`).join('');
+  for(let i=0;i<desloca;i++) html+='<div class="d off"></div>';
+  for(let d=1;d<=nDias;d++){
+    const k=`${chave}-${String(d).padStart(2,'0')}`, ev=porDia.get(k)||[];
+    html+=`<div class="d${ev.length?' ens':''}${k===hoje?' hoje':''}" title="${esc(ev.map(e=>e.titulo).join(' · '))}"><span class="num">${d}</span>${ev.length?`<span class="tag" style="color:var(--wash)">${ev.length>1?ev.length+' ensaios':'ensaio'}</span>`:''}</div>`;
+  }
+  document.getElementById('wcal-grid').innerHTML=html;
+  document.getElementById('wcal-lista').innerHTML = doMes.length ? doMes.map(e=>{
+    const dd=e.dia.split('-');
+    return `<div class="linha${e.dia<hoje?' passado':''}"><b>${dd[2]}/${dd[1]}${e.hora?' · '+e.hora:''}</b><span>${esc(e.titulo)}</span></div>`;
+  }).join('') : `<div id="wcal-vazio">Sem ensaios agendados neste mês.</div>`;
+}
 
 function openPersonCal(id){
   const m=members.find(x=>x.id===id); if(!m) return;
@@ -4297,7 +4375,7 @@ let proximaRecarga = Date.now() + RECARGA_MS;
 
 function podeRecarregar(){
   if(!navigator.onLine) return false;
-  if(document.querySelector('#reg-scrim.on,#plan-scrim.on,#map-scrim.on,#pcal-scrim.on,#ins-scrim.on,#pins-scrim.on,#inspass-scrim.on')) return false;
+  if(document.querySelector('#reg-scrim.on,#plan-scrim.on,#map-scrim.on,#pcal-scrim.on,#wcal-scrim.on,#ins-scrim.on,#pins-scrim.on,#inspass-scrim.on')) return false;
   const foco=document.activeElement;
   if(foco && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName)) return false;
   const feito=document.getElementById('ph-done');
