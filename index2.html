@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipa Comercial - Somengil</title>
+    
+    <!-- Tailwind CSS   -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!--  FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet JS & CSS (Mapa GPS) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at center, rgba(81, 184, 234, 1) 5%, rgb(18, 32, 39) 90%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #0f172a;
+        }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Leaflet Map container */
+        #map-container {
+            height: 440px;
+            border-radius: 1.25rem;
+            z-index: 10;
+        }
+
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card shadows  */
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-shadow-hover {
+            transition: all 0.25s ease;
+        }
+        .card-shadow-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Leaflet Custom Marker Styling */
+        .custom-person-pin {
+            background: transparent !important;
+            border: none !important;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen pb-24 md:pb-8">
+
+    <header class="bg-slate-900/90 backdrop-blur-md text-white sticky top-0 z-40 shadow-lg border-b border-slate-700/50">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            <a href="alternativa.html" class="flex items-center gap-3 sm:gap-4 transition hover:opacity-90" aria-label="Ir para página inicial">
+                <!-- Logo Somengil -->
+                <img src="https://res.cloudinary.com/dlkkjtgvy/image/upload/v1780388780/somengil_logo_white_ofh0xi.png" 
+                     alt="Somengil Logo" 
+                     class="h-7 sm:h-9 object-contain"
+                     onerror="this.onerror=null; this.src='https://placehold.co/120x36/0284c7/ffffff?text=SOMENGIL';">
+                
+                <div class="h-6 w-px bg-white/20 hidden sm:block"></div>
+                
+                <div>
+                    <h1 class="text-base sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        Equipa Comercial
+                    </h1>
+                </div>
+            </a>
+
+            <!-- Centro: Relógio em Tempo Real para TV -->
+            <div class="hidden lg:flex items-center gap-3 bg-slate-800/80 px-4 py-1.5 rounded-xl border border-slate-700/60">
+                <i class="fa-regular fa-clock text-sky-400"></i>
+                <div class="text-xs font-mono tracking-wide text-slate-200" id="tv-live-clock">--:--:--</div>
+                <div class="w-px h-3 bg-slate-700"></div>
+                <div class="text-xs font-semibold text-slate-400" id="tv-live-date">---</div>
+            </div>
+
+            <!-- Botão de Onboarding -->
+            <div class="flex items-center gap-2">
+                <button onclick="openCheckinModal()" class="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-4 py-2 rounded-xl transition shadow-lg shadow-sky-500/20 active:scale-95 text-xs sm:text-sm">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Onboarding</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 flex-1 w-full space-y-5">
+
+        <!-- METRICAS RÁPIDAS (4 CARTÕES TIPO PILL)  -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- Na Fábrica -->
+            <div class="bg-white/95 backdrop-blur-md rounded-2xl p-4 card-shadow border border-slate-200/80 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-industry"></i>
+                    </div>
+                    <div>
+                        <h3 id="stat-fabrica" class="text-2xl font-extrabold text-slate-900 leading-none">0</h3>
+                        <p class="text-xs font-semibold text-slate-500 mt-1">Na Fábrica Hoje</p>
+                    </div>
+                </div>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+
+            <!-- Home Office -->
+            <div class="bg-white/95 backdrop-blur-md rounded-2xl p-4 card-shadow border border-slate-200/80 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-house-laptop"></i>
+                    </div>
+                    <div>
+                        <h3 id="stat-home" class="text-2xl font-extrabold text-slate-900 leading-none">0</h3>
+                        <p class="text-xs font-semibold text-slate-500 mt-1">Home Office Hoje</p>
+                    </div>
+                </div>
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+            </div>
+
+            <!-- Em Viagem -->
+            <div class="bg-white/95 backdrop-blur-md rounded-2xl p-4 card-shadow border border-slate-200/80 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-plane"></i>
+                    </div>
+                    <div>
+                        <h3 id="stat-viagem" class="text-2xl font-extrabold text-slate-900 leading-none">0</h3>
+                        <p class="text-xs font-semibold text-slate-500 mt-1">Em Viagem Hoje</p>
+                    </div>
+                </div>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            </div>
+
+            <!-- De Férias -->
+            <div class="bg-white/95 backdrop-blur-md rounded-2xl p-4 card-shadow border border-slate-200/80 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-umbrella-beach"></i>
+                    </div>
+                    <div>
+                        <h3 id="stat-ferias" class="text-2xl font-extrabold text-slate-900 leading-none">0</h3>
+                        <p class="text-xs font-semibold text-slate-500 mt-1">De Férias Hoje</p>
+                    </div>
+                </div>
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+            </div>
+        </div>
+
+        <div class="hidden md:flex items-center gap-2 bg-slate-900/60 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/60 card-shadow">
+            <button onclick="switchTab('quem-onde')" id="desktop-tab-quem-onde" class="desktop-tab-btn flex-1 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-sky-500 text-slate-950 shadow">
+                <i class="fa-solid fa-users"></i>
+                <span>Quem & Onde Está</span>
+            </button>
+            <button onclick="switchTab('map-history')" id="desktop-tab-map-history" class="desktop-tab-btn flex-1 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-200 hover:text-white hover:bg-slate-800/60">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span>Mapa GPS & Histórico</span>
+            </button>
+        </div>
+
+        <section id="tab-quem-onde" class="tab-content active fade-in">
+            <div id="team-grouped-container" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                <!-- Dynamic team member cards  injected via JS -->
+            </div>
+        </section>
+
+        <section id="tab-map-history" class="tab-content fade-in space-y-6">
+            <!-- Mapa Leaflet Interativo -->
+            <div class="bg-white/95 backdrop-blur-md rounded-3xl p-5 card-shadow border border-slate-200/80">
+                <div class="flex items-center justify-between mb-3.5">
+                    <h2 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-sky-600"></i>
+                        Localizações GPS Registadas
+                    </h2>
+                    <span class="text-xs font-semibold text-slate-400">Fotos dos colaboradores no mapa</span>
+                </div>
+                <div id="map-container" class="w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner"></div>
+            </div>
+
+            <!-- Tabela de Histórico Auditável -->
+            <div class="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 card-shadow border border-slate-200/80 space-y-4">
+                <h2 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
+                    Histórico Recente de Check-Ins
+                </h2>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-3 font-bold">Comercial</th>
+                                <th class="py-3 px-3 font-bold">Estado</th>
+                                <th class="py-3 px-3 font-bold">Substituto</th>
+                                <th class="py-3 px-3 font-bold">Data / Hora</th>
+                                <th class="py-3 px-3 font-bold">GPS</th>
+                                <th class="py-3 px-3 font-bold">Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody" class="divide-y divide-slate-100">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 z-40 px-3 py-2 flex items-center justify-around shadow-2xl">
+        <button onclick="switchTab('quem-onde')" id="mobile-tab-quem-onde" class="mobile-tab-btn flex flex-col items-center justify-center w-16 py-1 text-sky-400 font-bold transition">
+            <i class="fa-solid fa-users text-lg"></i>
+            <span class="text-[10px] mt-0.5">Equipa</span>
+        </button>
+
+        <button onclick="openCheckinModal()" class="flex flex-col items-center justify-center -mt-5">
+            <div class="w-12 h-12 rounded-full bg-sky-500 text-slate-950 flex items-center justify-center text-xl shadow-xl border-4 border-slate-900 active:scale-90 transition font-bold">
+                <i class="fa-solid fa-plus"></i>
+            </div>
+            <span class="text-[10px] text-white font-bold mt-0.5">Onboarding</span>
+        </button>
+
+        <button onclick="switchTab('map-history')" id="mobile-tab-map-history" class="mobile-tab-btn flex flex-col items-center justify-center w-16 py-1 text-slate-400 hover:text-white transition">
+            <i class="fa-solid fa-map-location-dot text-lg"></i>
+            <span class="text-[10px] mt-0.5">Mapa</span>
+        </button>
+    </nav>
+
+    <div id="checkin-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden fade-in border border-slate-100">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-location-dot text-sky-600"></i>
+                    Onboarding - Registo Diário
+                </h3>
+                <button onclick="closeCheckinModal()" class="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200/60 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="checkin-form" onsubmit="submitCheckin(event)" class="p-6 space-y-4">
+                
+                <!-- Feedback/Error Message Container -->
+                <div id="modal-alert" class="hidden p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation text-rose-600 text-sm"></i>
+                    <span id="modal-alert-text">Por favor, preencha todos os campos obrigatórios.</span>
+                </div>
+
+                <!-- Selecionar Comercial -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Comercial</label>
+                    <select id="select-member" onchange="onMemberSelectChange()" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="" disabled selected>Selecione o seu nome...</option>
+                    </select>
+                </div>
+
+                <!-- Selecionar Localização -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">Local de Trabalho Hoje</label>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button type="button" onclick="selectLocation('fabrica')" id="loc-fabrica" class="loc-btn flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/50 transition text-left">
+                            <i class="fa-solid fa-industry text-emerald-600 text-xl"></i>
+                            <div>
+                                <div class="text-xs font-bold text-slate-900">Fábrica</div>
+                                <div class="text-[10px] text-slate-500">Instalações</div>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="selectLocation('home')" id="loc-home" class="loc-btn flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-sky-50/50 transition text-left">
+                            <i class="fa-solid fa-house-laptop text-sky-600 text-xl"></i>
+                            <div>
+                                <div class="text-xs font-bold text-slate-900">Home Office</div>
+                                <div class="text-[10px] text-slate-500">Trabalho Remoto</div>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="selectLocation('viagem')" id="loc-viagem" class="loc-btn flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-amber-50/50 transition text-left">
+                            <i class="fa-solid fa-plane text-amber-600 text-xl"></i>
+                            <div>
+                                <div class="text-xs font-bold text-slate-900">Em Viagem</div>
+                                <div class="text-[10px] text-slate-500">Visita a Cliente</div>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="selectLocation('ferias')" id="loc-ferias" class="loc-btn flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 transition text-left">
+                            <i class="fa-solid fa-umbrella-beach text-purple-600 text-xl"></i>
+                            <div>
+                                <div class="text-xs font-bold text-slate-900">De Férias</div>
+                                <div class="text-[10px] text-slate-500">Ausência</div>
+                            </div>
+                        </button>
+                    </div>
+                    <input type="hidden" id="selected-location-value" required>
+                </div>
+
+                <!-- Campo Dinâmico: Substituto de Férias -->
+                <div id="substitute-container" class="hidden bg-purple-50 border border-purple-200 rounded-2xl p-4 space-y-1.5 fade-in">
+                    <label class="block text-xs font-extrabold text-purple-900">
+                        <i class="fa-solid fa-user-gear mr-1 text-purple-600"></i>
+                        Colaborador Substituto (Obrigatório)
+                    </label>
+                    <p class="text-[11px] text-purple-700">Indique qual o colega que assumirá as suas funções durante as férias.</p>
+                    <select id="select-substitute" class="w-full bg-white border border-purple-300 rounded-xl px-3 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="" disabled selected>Selecione um colega...</option>
+                    </select>
+                </div>
+
+                <!-- Observações -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Observações (Opcional)</label>
+                    <textarea id="checkin-obs" rows="2" placeholder="Ex: Reunião no cliente X, projeto Y..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 rounded-2xl transition shadow-xl active:scale-98 text-sm">
+                    Confirmar Registo
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden fade-in border border-slate-100">
+            <div id="detail-modal-body">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_MEMBERS = [
+            {
+                id: 1,
+                name: "David José Nunes Borges",
+                status: "fabrica",
+                subId: null,
+                metrics: { fabrica: 18, home: 4, viagem: 2 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012316/David_Borges_Comercial_iaun1r.jpg",
+                lat: 40.5751,
+                lng: -8.4442,
+                lastUpdate: "2026-08-06 09:15",
+                obs: "Em trabalho na fábrica"
+            },
+            {
+                id: 2,
+                name: "Diogo Paulo Gonçalves Marques Brito de Sousa",
+                status: "fabrica",
+                subId: null,
+                metrics: { fabrica: 21, home: 2, viagem: 5 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012316/Diogo_Sousa_Comercial_hukxx3.jpg",
+                lat: 40.5753,
+                lng: -8.4440,
+                lastUpdate: "2026-08-06 08:30",
+                obs: "Acompanhamento da linha de produção"
+            },
+            {
+                id: 3,
+                name: "João Maria Bernardo da Cunha Pinto",
+                status: "home",
+                subId: null,
+                metrics: { fabrica: 10, home: 14, viagem: 3 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012316/Jo%C3%A3o_Pinto_Comercial_jfqmzk.jpg",
+                lat: 41.1579,
+                lng: -8.6291,
+                lastUpdate: "2026-08-06 09:00",
+                obs: "Trabalho remoto no Porto"
+            },
+            {
+                id: 4,
+                name: "Manuel Diniz Cruz do Marco",
+                status: "viagem",
+                subId: null,
+                metrics: { fabrica: 7, home: 3, viagem: 18 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012316/Manuel_Diniz_Comercial_lhb2pc.jpg",
+                lat: 38.7223,
+                lng: -9.1393,
+                lastUpdate: "2026-08-06 10:20",
+                obs: "Reuniões comerciais em Lisboa"
+            },
+            {
+                id: 5,
+                name: "Miguel André Ferreira Pacheco Quental",
+                status: "fabrica",
+                subId: null,
+                metrics: { fabrica: 25, home: 1, viagem: 4 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012315/Andr%C3%A9_Quental_Comercial_okupkb.jpg",
+                lat: 40.5749,
+                lng: -8.4445,
+                lastUpdate: "2026-08-06 08:45",
+                obs: "Gestão de propostas comerciais"
+            },
+            {
+                id: 6,
+                name: "Renato Pires Gomes",
+                status: "ferias",
+                subId: 1,
+                metrics: { fabrica: 12, home: 5, viagem: 6 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012316/Renato_Gomes_Comercial_fs38ew.jpg",
+                lat: 40.5750,
+                lng: -8.4441,
+                lastUpdate: "2026-08-01 18:00",
+                obs: "Férias de Verão"
+            },
+            {
+                id: 7,
+                name: "David Mendez",
+                status: "viagem",
+                subId: null,
+                metrics: { fabrica: 5, home: 2, viagem: 20 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012315/David_Mendez_Comercial_ayjxcw.jpg",
+                lat: 40.4168,
+                lng: -3.7038,
+                lastUpdate: "2026-08-06 07:50",
+                obs: "Prospeção de mercado em Madrid"
+            },
+            {
+                id: 8,
+                name: "David Sturla",
+                status: "home",
+                subId: null,
+                metrics: { fabrica: 8, home: 15, viagem: 5 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012316/Davide_Sturla_Comercial_he8i21.jpg",
+                lat: 45.4642,
+                lng: 9.1900,
+                lastUpdate: "2026-08-06 08:15",
+                obs: "Home office em Milão"
+            },
+            {
+                id: 9,
+                name: "Juan Marco",
+                status: "fabrica",
+                subId: null,
+                metrics: { fabrica: 16, home: 3, viagem: 7 },
+                photo: "",
+                lat: 40.5752,
+                lng: -8.4443,
+                lastUpdate: "2026-08-06 08:50",
+                obs: "Fábrica Somengil"
+            },
+            {
+                id: 10,
+                name: "Francisco Ventura",
+                status: "fabrica",
+                subId: null,
+                metrics: { fabrica: 19, home: 4, viagem: 6 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012805/Francisco_Ventura_Comercial_ykluyu.jpg",
+                lat: 40.5754,
+                lng: -8.4444,
+                lastUpdate: "2026-08-06 09:10",
+                obs: "Análise de projetos"
+            },
+            {
+                id: 11,
+                name: "Simão Ventura",
+                status: "viagem",
+                subId: null,
+                metrics: { fabrica: 9, home: 2, viagem: 15 },
+                photo: "https://res.cloudinary.com/dlkkjtgvy/image/upload/v1786012805/Sim%C3%A3o_Ventura_Comercial_iso5zg.jpg",
+                lat: 38.7071,
+                lng: -9.1355,
+                lastUpdate: "2026-08-06 11:00",
+                obs: "Demonstração técnica de equipamento"
+            }
+        ];
+
+        let members = [];
+        let historyLogs = [];
+        let map = null;
+        let mapMarkers = [];
+        let tempGps = { lat: 40.5751, lng: -8.4442 };
+
+        // Cole o URL gerado na publicação do seu Google Apps Script aqui:
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyHZjtdZjrzW9n50i1D9aeA45YhgD3cPHmx8_LKG0Z1nmON0KogO4emoXDTVJaRuAZ9/exec";
+
+        function loadState() {
+            const storedMembers = localStorage.getItem('somengil_presenca_members_v6');
+            if (storedMembers) {
+                try {
+                    members = JSON.parse(storedMembers);
+                } catch(e) {
+                    members = JSON.parse(JSON.stringify(DEFAULT_MEMBERS));
+                }
+            } else {
+                members = JSON.parse(JSON.stringify(DEFAULT_MEMBERS));
+            }
+
+            const storedHistory = localStorage.getItem('somengil_presenca_history_v6');
+            if (storedHistory) {
+                try {
+                    historyLogs = JSON.parse(storedHistory);
+                } catch(e) {
+                    historyLogs = [];
+                }
+            } else {
+                historyLogs = [
+                    { memberName: "Renato Pires Gomes", status: "ferias", subName: "David José Nunes Borges", time: "2026-08-01 18:00", lat: "40.5750", lng: "-8.4441", obs: "Férias de Verão" },
+                    { memberName: "Simão Ventura", status: "viagem", subName: "-", time: "2026-08-06 11:00", lat: "38.7071", lng: "-9.1355", obs: "Demonstração técnica" },
+                    { memberName: "Manuel Diniz Cruz do Marco", status: "viagem", subName: "-", time: "2026-08-06 10:20", lat: "38.7223", lng: "-9.1393", obs: "Reuniões comerciais" }
+                ];
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('somengil_presenca_members_v6', JSON.stringify(members));
+            localStorage.setItem('somengil_presenca_history_v6', JSON.stringify(historyLogs));
+        }
+
+        function getInitials(name) {
+            if (!name) return '??';
+            const parts = name.trim().split(' ');
+            if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+
+        function getAvatarHtml(member, sizeClass = "w-14 h-14") {
+            const initials = getInitials(member.name);
+            if (member.photo) {
+                return `
+                    <div class="${sizeClass} rounded-full overflow-hidden bg-slate-100 shrink-0 relative shadow-md border-2 border-slate-200/80">
+                        <img src="${member.photo}" alt="${member.name}" class="w-full h-full object-cover rounded-full" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="w-full h-full bg-slate-200 flex items-center justify-center font-extrabold text-slate-700 text-sm hidden">
+                            ${initials}
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="${sizeClass} rounded-full bg-slate-200 border-2 border-slate-300 flex items-center justify-center font-extrabold text-slate-700 text-sm shrink-0 shadow-md">
+                        ${initials}
+                    </div>
+                `;
+            }
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'fabrica':
+                    return `
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Fábrica
+                        </span>`;
+                case 'home':
+                    return `
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                            Home Office
+                        </span>`;
+                case 'viagem':
+                    return `
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                            Em Viagem
+                        </span>`;
+                case 'ferias':
+                    return `
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                            <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                            De Férias
+                        </span>`;
+                default:
+                    return '';
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(`tab-${tabId}`);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.desktop-tab-btn').forEach(btn => {
+                btn.className = "desktop-tab-btn flex-1 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-200 hover:text-white hover:bg-slate-800/60";
+            });
+            const activeDesktop = document.getElementById(`desktop-tab-${tabId}`);
+            if (activeDesktop) {
+                activeDesktop.className = "desktop-tab-btn flex-1 py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-sky-500 text-slate-950 shadow";
+            }
+
+            document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+                btn.classList.remove('text-sky-400');
+                btn.classList.add('text-slate-400');
+            });
+            const activeMobile = document.getElementById(`mobile-tab-${tabId}`);
+            if (activeMobile) {
+                activeMobile.classList.remove('text-slate-400');
+                activeMobile.classList.add('text-sky-400');
+            }
+
+            if (tabId === 'map-history') {
+                setTimeout(() => {
+                    initOrRefreshMap();
+                }, 100);
+            }
+        }
+
+        function openCheckinModal() {
+            const memberSelect = document.getElementById('select-member');
+            if (memberSelect) {
+                memberSelect.innerHTML = '<option value="" disabled selected>Selecione o seu nome...</option>' +
+                    members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            }
+
+            document.getElementById('checkin-form').reset();
+            document.getElementById('selected-location-value').value = '';
+            document.getElementById('substitute-container').classList.add('hidden');
+            document.getElementById('select-substitute').removeAttribute('required');
+            hideModalAlert();
+
+            document.querySelectorAll('.loc-btn').forEach(btn => {
+                btn.classList.remove('border-emerald-500', 'bg-emerald-50', 'border-sky-500', 'bg-sky-50', 'border-amber-500', 'bg-amber-50', 'border-purple-500', 'bg-purple-50', 'ring-2');
+            });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        tempGps = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    },
+                    err => {
+                        tempGps = { lat: 40.5751, lng: -8.4442 };
+                    },
+                    { timeout: 5000 }
+                );
+            }
+
+            document.getElementById('checkin-modal').classList.remove('hidden');
+        }
+
+        function closeCheckinModal() {
+            document.getElementById('checkin-modal').classList.add('hidden');
+            hideModalAlert();
+        }
+
+        function showModalAlert(msg) {
+            const alertContainer = document.getElementById('modal-alert');
+            const alertText = document.getElementById('modal-alert-text');
+            if (alertContainer && alertText) {
+                alertText.innerText = msg;
+                alertContainer.classList.remove('hidden');
+            }
+        }
+
+        function hideModalAlert() {
+            const alertContainer = document.getElementById('modal-alert');
+            if (alertContainer) {
+                alertContainer.classList.add('hidden');
+            }
+        }
+
+        function selectLocation(loc) {
+            hideModalAlert();
+            document.getElementById('selected-location-value').value = loc;
+
+            document.querySelectorAll('.loc-btn').forEach(btn => {
+                btn.classList.remove('border-emerald-500', 'bg-emerald-50', 'border-sky-500', 'bg-sky-50', 'border-amber-500', 'bg-amber-50', 'border-purple-500', 'bg-purple-50', 'ring-2');
+            });
+
+            const activeBtn = document.getElementById(`loc-${loc}`);
+            if (activeBtn) {
+                if (loc === 'fabrica') activeBtn.classList.add('border-emerald-500', 'bg-emerald-50', 'ring-2');
+                if (loc === 'home') activeBtn.classList.add('border-sky-500', 'bg-sky-50', 'ring-2');
+                if (loc === 'viagem') activeBtn.classList.add('border-amber-500', 'bg-amber-50', 'ring-2');
+                if (loc === 'ferias') activeBtn.classList.add('border-purple-500', 'bg-purple-50', 'ring-2');
+            }
+
+            const subContainer = document.getElementById('substitute-container');
+            const subSelect = document.getElementById('select-substitute');
+
+            if (loc === 'ferias') {
+                subContainer.classList.remove('hidden');
+                subSelect.setAttribute('required', 'required');
+                updateSubstituteOptions();
+            } else {
+                subContainer.classList.add('hidden');
+                subSelect.removeAttribute('required');
+            }
+        }
+
+        function onMemberSelectChange() {
+            hideModalAlert();
+            const loc = document.getElementById('selected-location-value').value;
+            if (loc === 'ferias') {
+                updateSubstituteOptions();
+            }
+        }
+
+        function updateSubstituteOptions() {
+            const selectedMemberId = parseInt(document.getElementById('select-member').value) || null;
+            const subSelect = document.getElementById('select-substitute');
+
+            const filtered = members.filter(m => m.id !== selectedMemberId);
+            subSelect.innerHTML = '<option value="" disabled selected>Selecione um colega...</option>' +
+                filtered.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+        }
+
+        function submitCheckin(e) {
+            e.preventDefault();
+
+            const memberSelect = document.getElementById('select-member');
+            const memberId = parseInt(memberSelect.value);
+            const location = document.getElementById('selected-location-value').value;
+            const subSelect = document.getElementById('select-substitute');
+            const subId = (location === 'ferias' && subSelect.value) ? parseInt(subSelect.value) : null;
+            const obs = document.getElementById('checkin-obs').value.trim();
+
+            if (!memberId) {
+                showModalAlert('Por favor, selecione o seu nome no formulário.');
+                return;
+            }
+
+            if (!location) {
+                showModalAlert('Por favor, selecione o local de trabalho para hoje.');
+                return;
+            }
+
+            if (location === 'ferias' && !subId) {
+                showModalAlert('Ao marcar férias, é obrigatório selecionar um colaborador substituto.');
+                return;
+            }
+
+            const member = members.find(m => m.id === memberId);
+            if (!member) {
+                showModalAlert('Colaborador não encontrado.');
+                return;
+            }
+
+            member.status = location;
+            member.subId = subId;
+            if (location !== 'ferias' && member.metrics[location] !== undefined) {
+                member.metrics[location] += 1;
+            }
+
+            member.lat = tempGps.lat + (Math.random() - 0.5) * 0.002;
+            member.lng = tempGps.lng + (Math.random() - 0.5) * 0.002;
+
+            const now = new Date();
+            member.lastUpdate = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0') + ' ' +
+                String(now.getHours()).padStart(2, '0') + ':' +
+                String(now.getMinutes()).padStart(2, '0');
+
+            member.obs = obs || (location === 'ferias' ? 'De Férias' : `Trabalho em ${location}`);
+
+            const subMember = subId ? members.find(m => m.id === subId) : null;
+            const statusLabelMap = {
+                'fabrica': 'Fábrica',
+                'home': 'Home Office',
+                'viagem': 'Em Viagem',
+                'ferias': 'De Férias'
+            };
+
+            historyLogs.unshift({
+                memberName: member.name,
+                status: location,
+                subName: subMember ? subMember.name : '-',
+                time: member.lastUpdate,
+                lat: member.lat.toFixed(4),
+                lng: member.lng.toFixed(4),
+                obs: member.obs
+            });
+
+            // Envio automático para o Google Sheets via Google Apps Script
+            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "SUA_WEB_APP_URL_AQUI") {
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain" },
+                    body: JSON.stringify({
+                        time: member.lastUpdate,
+                        memberName: member.name,
+                        statusLabel: statusLabelMap[location] || location,
+                        subName: subMember ? subMember.name : '-',
+                        lat: member.lat.toFixed(4),
+                        lng: member.lng.toFixed(4),
+                        obs: member.obs
+                    })
+                }).catch(err => console.error("Erro ao enviar para Google Sheets:", err));
+            }
+
+            saveState();
+            renderSummaryMetrics();
+            renderTeamGrouped();
+            renderHistoryTable();
+
+            closeCheckinModal();
+        }
+
+        function openDetailModal(memberId) {
+            const member = members.find(m => m.id === memberId);
+            if (!member) return;
+
+            const subMember = member.subId ? members.find(m => m.id === member.subId) : null;
+            const modalBody = document.getElementById('detail-modal-body');
+
+            modalBody.innerHTML = `
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div class="flex items-center gap-3">
+                            ${getAvatarHtml(member, 'w-14 h-14')}
+                            <div>
+                                <h3 class="text-sm font-extrabold text-slate-900 leading-snug">${member.name}</h3>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Último registo: ${member.lastUpdate}</p>
+                            </div>
+                        </div>
+                        <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-500">Estado Atual:</span>
+                        ${getStatusBadge(member.status)}
+                    </div>
+
+                    ${member.status === 'ferias' && subMember ? `
+                        <div class="bg-purple-50 border border-purple-200 rounded-2xl p-3.5 space-y-1">
+                            <div class="text-xs font-extrabold text-purple-900 flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-gear text-purple-600"></i>
+                                Substituto Designado
+                            </div>
+                            <div class="text-xs font-semibold text-purple-800">${subMember.name}</div>
+                        </div>
+                    ` : ''}
+
+                    <div class="space-y-1.5">
+                        <span class="text-xs font-bold text-slate-500">Histórico de Dias (Acumulado):</span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center">
+                                <div class="text-base font-extrabold text-emerald-800">${member.metrics.fabrica}d</div>
+                                <div class="text-[10px] font-semibold text-emerald-600">Fábrica</div>
+                            </div>
+                            <div class="bg-sky-50 border border-sky-200 rounded-xl p-2.5 text-center">
+                                <div class="text-base font-extrabold text-sky-800">${member.metrics.home}d</div>
+                                <div class="text-[10px] font-semibold text-sky-600">Home Office</div>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-center">
+                                <div class="text-base font-extrabold text-amber-800">${member.metrics.viagem}d</div>
+                                <div class="text-[10px] font-semibold text-amber-600">Em Viagem</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-1">
+                        <div class="text-[11px] font-bold text-slate-500 flex items-center justify-between">
+                            <span><i class="fa-solid fa-location-dot text-sky-600 mr-1"></i> Coordenadas GPS</span>
+                            <span class="font-mono text-slate-700">${member.lat.toFixed(4)}, ${member.lng.toFixed(4)}</span>
+                        </div>
+                        ${member.obs ? `
+                            <div class="text-xs text-slate-700 pt-1.5 border-t border-slate-200/60 mt-1.5 italic">
+                                "${member.obs}"
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <button onclick="closeDetailModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-2xl transition text-xs">
+                        Fechar
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+
+        function renderSummaryMetrics() {
+            const countFabrica = members.filter(m => m.status === 'fabrica').length;
+            const countHome = members.filter(m => m.status === 'home').length;
+            const countViagem = members.filter(m => m.status === 'viagem').length;
+            const countFerias = members.filter(m => m.status === 'ferias').length;
+
+            document.getElementById('stat-fabrica').innerText = countFabrica;
+            document.getElementById('stat-home').innerText = countHome;
+            document.getElementById('stat-viagem').innerText = countViagem;
+            document.getElementById('stat-ferias').innerText = countFerias;
+        }
+
+        function renderTeamGrouped() {
+            const container = document.getElementById('team-grouped-container');
+            if (!container) return;
+
+            const categories = [
+                { key: 'fabrica', title: 'Na Fábrica', icon: 'fa-industry', color: 'emerald', bgLight: 'bg-emerald-50', textCol: 'text-emerald-700', badgeBorder: 'border-emerald-200' },
+                { key: 'home', title: 'Home Office', icon: 'fa-house-laptop', color: 'sky', bgLight: 'bg-sky-50', textCol: 'text-sky-700', badgeBorder: 'border-sky-200' },
+                { key: 'viagem', title: 'Em Viagem', icon: 'fa-plane', color: 'amber', bgLight: 'bg-amber-50', textCol: 'text-amber-700', badgeBorder: 'border-amber-200' },
+                { key: 'ferias', title: 'De Férias', icon: 'fa-umbrella-beach', color: 'purple', bgLight: 'bg-purple-50', textCol: 'text-purple-700', badgeBorder: 'border-purple-200' }
+            ];
+
+            let html = '';
+
+            categories.forEach(cat => {
+                const list = members.filter(m => m.status === cat.key);
+
+                html += `
+                    <div class="bg-white/90 backdrop-blur-md rounded-2xl p-4 card-shadow border border-slate-200/90 flex flex-col justify-between h-full min-h-[380px]">
+                        <div>
+                            <!-- Category Header -->
+                            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-xl ${cat.bgLight} ${cat.textCol} flex items-center justify-center text-sm font-bold">
+                                        <i class="fa-solid ${cat.icon}"></i>
+                                    </div>
+                                    <h2 class="text-sm font-extrabold text-slate-900 tracking-tight">${cat.title}</h2>
+                                </div>
+                                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${cat.bgLight} ${cat.textCol} border ${cat.badgeBorder}">
+                                    ${list.length}
+                                </span>
+                            </div>
+
+                            <!-- Cards for this category -->
+                            ${list.length === 0 ? `
+                                <div class="py-8 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                                    <p class="text-xs text-slate-400 italic">Nenhum comercial registado</p>
+                                </div>
+                            ` : `
+                                <div class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+                                    ${list.map(member => {
+                                        const subMember = member.subId ? members.find(m => m.id === member.subId) : null;
+                                        
+                                        const totalDays = (member.metrics.fabrica || 0) + (member.metrics.home || 0) + (member.metrics.viagem || 0);
+                                        const viagemPct = totalDays > 0 ? Math.min(100, Math.round((member.metrics.viagem / totalDays) * 100)) : 0;
+                                        const strokeDashoffset = 125.6 - (125.6 * viagemPct) / 100;
+
+                                        return `
+                                            <div onclick="openDetailModal(${member.id})" class="bg-white hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 card-shadow-hover cursor-pointer transition flex items-center gap-3 group relative">
+                                                
+                                                <!-- Member Portrait Image (Circle Frame) -->
+                                                ${getAvatarHtml(member, 'w-12 h-12 sm:w-14 sm:h-14')}
+
+                                                <!-- Middle Member Details -->
+                                                <div class="flex-1 min-w-0 space-y-1">
+                                                    <h3 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-600 transition truncate leading-tight">${member.name}</h3>
+
+                                                    <!-- Metric Chips -->
+                                                    <div class="flex items-center gap-1 pt-0.5">
+                                                        <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/50" title="Dias em Fábrica">
+                                                            <i class="fa-solid fa-industry text-[8px]"></i> ${member.metrics.fabrica}d
+                                                        </span>
+                                                        <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/50" title="Dias em Home Office">
+                                                            <i class="fa-solid fa-house-laptop text-[8px]"></i> ${member.metrics.home}d
+                                                        </span>
+                                                        <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/50" title="Dias em Viagem">
+                                                            <i class="fa-solid fa-plane text-[8px]"></i> ${member.metrics.viagem}d
+                                                        </span>
+                                                    </div>
+
+                                                    ${member.status === 'ferias' && subMember ? `
+                                                        <div class="text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 px-2 py-0.5 rounded-lg flex items-center gap-1 truncate mt-1">
+                                                            <i class="fa-solid fa-user-gear text-[9px] shrink-0"></i>
+                                                            <span class="truncate">Sub: <strong>${subMember.name.split(' ')[0]} ${subMember.name.split(' ').slice(-1)}</strong></span>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+
+                                                <!-- Days in Travel Ring Indicator -->
+                                                <div class="shrink-0 flex flex-col items-center justify-center pl-1 border-l border-slate-100">
+                                                    <div class="relative w-9 h-9 flex items-center justify-center">
+                                                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 48 48">
+                                                            <circle cx="24" cy="24" r="20" stroke="#f1f5f9" stroke-width="4" fill="transparent" />
+                                                            <circle cx="24" cy="24" r="20" stroke="#f59e0b" stroke-width="4" stroke-dasharray="125.6" stroke-dashoffset="${strokeDashoffset}" stroke-linecap="round" fill="transparent" />
+                                                        </svg>
+                                                        <span class="absolute text-[9px] font-extrabold text-amber-700">${member.metrics.viagem}d</span>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            `}
+                        </div>
+
+                        <!-- Footer indicator for TV view -->
+                        <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                            <span>Atualizado</span>
+                            <span class="font-mono">${new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function getMemberMarkerIcon(m) {
+            const initials = getInitials(m.name);
+            let borderColor = 'border-slate-400';
+            let statusBg = 'bg-slate-500';
+            let statusIcon = 'fa-user';
+
+            if (m.status === 'fabrica') {
+                borderColor = 'border-emerald-500';
+                statusBg = 'bg-emerald-500';
+                statusIcon = 'fa-industry';
+            } else if (m.status === 'home') {
+                borderColor = 'border-sky-500';
+                statusBg = 'bg-sky-500';
+                statusIcon = 'fa-house-laptop';
+            } else if (m.status === 'viagem') {
+                borderColor = 'border-amber-500';
+                statusBg = 'bg-amber-500';
+                statusIcon = 'fa-plane';
+            } else if (m.status === 'ferias') {
+                borderColor = 'border-purple-500';
+                statusBg = 'bg-purple-500';
+                statusIcon = 'fa-umbrella-beach';
+            }
+
+            const photoHtml = m.photo 
+                ? `<img src="${m.photo}" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                   <div class="w-full h-full bg-slate-100 rounded-full flex items-center justify-center font-extrabold text-slate-700 text-xs hidden">${initials}</div>`
+                : `<div class="w-full h-full bg-slate-100 rounded-full flex items-center justify-center font-extrabold text-slate-700 text-xs">${initials}</div>`;
+
+            const html = `
+                <div class="relative group cursor-pointer flex flex-col items-center">
+                    <div class="relative w-12 h-12 rounded-full border-[3px] ${borderColor} bg-white shadow-xl flex items-center justify-center p-0.5 transition-transform group-hover:scale-110">
+                        ${photoHtml}
+                        <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${statusBg} text-white text-[9px] flex items-center justify-center border-2 border-white shadow">
+                            <i class="fa-solid ${statusIcon}"></i>
+                        </div>
+                    </div>
+                    <div class="w-2.5 h-2.5 bg-slate-800 rotate-45 -mt-1 shadow border border-white"></div>
+                </div>
+            `;
+
+            return L.divIcon({
+                className: 'custom-person-pin',
+                html: html,
+                iconSize: [48, 56],
+                iconAnchor: [24, 54],
+                popupAnchor: [0, -50]
+            });
+        }
+
+        function initOrRefreshMap() {
+            if (typeof L === 'undefined') return;
+
+            const mapEl = document.getElementById('map-container');
+            if (!mapEl) return;
+
+            if (!map) {
+                map = L.map('map-container').setView([40.5751, -8.4442], 6);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 18,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+            } else {
+                map.invalidateSize();
+            }
+
+            mapMarkers.forEach(m => map.removeLayer(m));
+            mapMarkers = [];
+
+            const bounds = [];
+
+            members.forEach(m => {
+                if (m.lat && m.lng) {
+                    const customIcon = getMemberMarkerIcon(m);
+                    const marker = L.marker([m.lat, m.lng], { icon: customIcon }).addTo(map);
+
+                    marker.bindPopup(`
+                        <div class="p-1 text-center font-sans">
+                            <div class="font-extrabold text-xs text-slate-900 mb-1">${m.name}</div>
+                            <div class="mb-1">${getStatusBadge(m.status)}</div>
+                            <div class="text-[10px] text-slate-500">${m.lastUpdate}</div>
+                            ${m.obs ? `<div class="text-[10px] italic text-slate-600 mt-1">"${m.obs}"</div>` : ''}
+                        </div>
+                    `);
+
+                    mapMarkers.push(marker);
+                    bounds.push([m.lat, m.lng]);
+                }
+            });
+
+            if (bounds.length > 0) {
+                map.fitBounds(bounds, { padding: [30, 30] });
+            }
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-tbody');
+            if (!tbody) return;
+
+            if (historyLogs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-6 text-center text-slate-400 italic">Nenhum registo no histórico</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = historyLogs.map(log => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-3 px-3 font-bold text-slate-900">${log.memberName}</td>
+                    <td class="py-3 px-3">${getStatusBadge(log.status)}</td>
+                    <td class="py-3 px-3 font-semibold text-purple-700">${log.subName || '-'}</td>
+                    <td class="py-3 px-3 font-mono text-slate-500 text-[11px]">${log.time}</td>
+                    <td class="py-3 px-3 font-mono text-slate-500 text-[11px]">${log.lat}, ${log.lng}</td>
+                    <td class="py-3 px-3 italic text-slate-600">${log.obs || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function startTvClock() {
+            function updateClock() {
+                const now = new Date();
+                const clockEl = document.getElementById('tv-live-clock');
+                const dateEl = document.getElementById('tv-live-date');
+                
+                if (clockEl) {
+                    clockEl.innerText = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                }
+                if (dateEl) {
+                    dateEl.innerText = now.toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase();
+                }
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        window.switchTab = switchTab;
+        window.openCheckinModal = openCheckinModal;
+        window.closeCheckinModal = closeCheckinModal;
+        window.selectLocation = selectLocation;
+        window.onMemberSelectChange = onMemberSelectChange;
+        window.submitCheckin = submitCheckin;
+        window.openDetailModal = openDetailModal;
+        window.closeDetailModal = closeDetailModal;
+
+        window.onload = function() {
+            loadState();
+            startTvClock();
+            renderSummaryMetrics();
+            renderTeamGrouped();
+            renderHistoryTable();
+        };
+    </script>
+</body>
+</html>

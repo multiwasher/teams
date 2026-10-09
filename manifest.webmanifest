@@ -1,0 +1,35 @@
+{
+  "name": "BIZDEV Team · Somengil",
+  "short_name": "BIZDEV Team",
+  "description": "Registo diário e quadro da equipa comercial: local de trabalho, planeamento de viagens e análise de esforço.",
+  "lang": "pt-PT",
+  "dir": "ltr",
+  "start_url": "./?modo=telemovel",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1D1D1F",
+  "theme_color": "#1D1D1F",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registar o dia",
+      "short_name": "Registar",
+      "description": "Abre directamente o registo de local de trabalho",
+      "url": "./?modo=telemovel#registo",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ecrã da TV",
+      "short_name": "TV",
+      "description": "Abre o quadro da equipa em modo televisão",
+      "url": "./?modo=tv",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
