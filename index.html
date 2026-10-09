@@ -1150,6 +1150,26 @@ html.tv #wcal-sheet{zoom:clamp(1,.115vh,2.2)}
 .tm-wr .id a.rl{color:var(--text-2);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--wash) 55%,transparent)}
 .tm-wr .id a.rl span{color:var(--wash);font-weight:700}
 .tm-wr .id a.rl:hover,.tm-wr .id a.rl:focus-visible{color:var(--text)}
+/* ── Lista completa das instalações ── */
+#ilist-scrim{position:fixed;inset:0;z-index:205;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:3vh 2vw}
+#ilist-scrim.on{display:flex;animation:fadein .25s ease}
+#ilist-sheet{--u:calc(100vh/1080);width:min(640px,94vw);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;border-radius:26px}
+html.tv #ilist-sheet{zoom:clamp(1,.115vh,2.2)}
+#ilist-head{flex:none;display:flex;align-items:center;gap:12px;padding:18px 20px 14px;background:var(--surface);border-bottom:1px solid var(--sep)}
+#ilist-head .sq{width:44px;height:44px;border-radius:13px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+#ilist-head .sq svg{width:24px;height:24px}
+#ilist-head h3{margin:0;font-size:18px;font-weight:700;letter-spacing:-.024em}
+#ilist-sub{font-size:13px;color:var(--text-2);margin-top:1px}
+#ilist-head .x{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--fill);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+#ilist-lista{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 16px 18px;display:flex;flex-direction:column;gap:10px}
+#ilist-lista .tm-it{flex:none;padding:12px 14px;border-radius:18px}
+#ilist-lista .tm-it .rg,#ilist-lista .tm-it .ic{width:52px;height:52px}
+#ilist-lista .tm-it h4{font-size:16px;white-space:normal}
+#ilist-lista .tm-it .l{font-size:13px;white-space:normal}
+#ilist-lista .tm-pill{font-size:12px}
+#ilist-lista .tm-it .rg b{font-size:14px}
+button.tm-more{align-self:flex-start;background:var(--fill);color:var(--text-2);border-radius:99px;padding:calc(5*var(--u)) calc(14*var(--u));font-weight:600;cursor:pointer}
+button.tm-more:hover,button.tm-more:focus-visible{background:var(--fill-2);color:var(--text)}
 </style>
 </head>
 <body>
@@ -1376,6 +1396,17 @@ html.tv #wcal-sheet{zoom:clamp(1,.115vh,2.2)}
         <div class="tlist"><h4 id="tlist-title">Próximas viagens</h4><div id="tlist"></div></div>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="ilist-scrim" onclick="if(event.target===this)closeInstLista()">
+  <div id="ilist-sheet" class="glass" role="dialog" aria-modal="true" aria-labelledby="ilist-titulo">
+    <div id="ilist-head">
+      <div class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.4v9.2L12 21l-8-4.4V7.4z M4 7.4l8 4.4 8-4.4 M12 11.8V21"/></svg></div>
+      <div style="min-width:0"><h3 id="ilist-titulo">—</h3><div id="ilist-sub"></div></div>
+      <button class="x" onclick="closeInstLista()" aria-label="Fechar"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+    <div id="ilist-lista"></div>
   </div>
 </div>
 
@@ -1763,6 +1794,21 @@ function ringSvg(p,id){
   return `<svg viewBox="0 0 60 60" class="rs" aria-hidden="true"><circle cx="30" cy="30" r="${R}" fill="none" style="stroke:var(--fill-2)" stroke-width="8"/>`
    + (v>0?`<circle cx="30" cy="30" r="${R}" fill="none" stroke="url(#${id})" stroke-width="8" stroke-dasharray="${(L*v/100).toFixed(2)} ${L.toFixed(2)}" transform="rotate(-90 30 30)"/>`:'')+`</svg>`;
 }
+const INST_VISTA = {};
+function instCard(r,tipo){
+  let esq, pill='';
+  if(tipo==='agendada'||tipo==='aguardo'){
+    const warn = tipo==='aguardo', col = warn?'var(--warn)':'var(--accent)';
+    esq = `<div class="ic" style="color:${col};background:${mixc(col,warn?16:18)}">${SVG_(warn?IC_PATH.alerta:IC_PATH.cal)}</div>`;
+    pill = `<div class="tm-pill" style="color:${col};background:${mixc(col,warn?16:18)}">${warn?'Aguardo info cliente':'Instalação agendada'}</div>`;
+  } else {
+    esq = `<div class="rg">${ringSvg(r.percent,'pt-'+tipo)}<b>${r.percent}%</b></div>`;
+  }
+  const l1=r.lote?`<span>${esc(r.lote)}</span>`:'';
+  const l2=[r.pais&&r.pais!=='Global'?r.pais:'', r.tecnico&&r.tecnico!=='-'?r.tecnico:''].filter(Boolean).map(esc).join(' · ');
+  return `<article class="g-card tm-it">${esq}<div class="tx">${pill}<h4>${esc(r.cliente)}</h4><div class="l">${l1}</div><div class="l">${l2?`<span>${l2}</span>`:''}</div></div></article>`;
+}
+
 function renderInstalacoes(id='tm-inst', MAX=2){
   const el=document.getElementById(id); if(!el) return;
   const hid='h-'+id;
@@ -1780,28 +1826,16 @@ function renderInstalacoes(id='tm-inst', MAX=2){
     .map(([l,n,id])=>`<div>${swatchPat(id)}<span>${l}</span><b>${n}</b></div>`).join('');
 
   const ring = p=>`conic-gradient(var(--accent) ${Math.max(0,Math.min(100,p))*3.6}deg, var(--fill-2) 0)`;
-  const card = (r,tipo)=>{
-    let esq, pill='';
-    if(tipo==='agendada'||tipo==='aguardo'){
-      const warn = tipo==='aguardo', col = warn?'var(--warn)':'var(--accent)';
-      esq = `<div class="ic" style="color:${col};background:${mixc(col,warn?16:18)}">${SVG_(warn?IC_PATH.alerta:IC_PATH.cal)}</div>`;
-      pill = `<div class="tm-pill" style="color:${col};background:${mixc(col,warn?16:18)}">${warn?'Aguardo info cliente':'Instalação agendada'}</div>`;
-    } else {
-      esq = `<div class="rg">${ringSvg(r.percent,'pt-'+tipo)}<b>${r.percent}%</b></div>`;
-    }
-    const l1=r.lote?`<span>${esc(r.lote)}</span>`:'';
-    const l2=[r.pais&&r.pais!=='Global'?r.pais:'', r.tecnico&&r.tecnico!=='-'?r.tecnico:''].filter(Boolean).map(esc).join(' · ');
-    return `<article class="g-card tm-it">${esq}<div class="tx">${pill}<h4>${esc(r.cliente)}</h4><div class="l">${l1}</div><div class="l">${l2?`<span>${l2}</span>`:''}</div></div></article>`;
-  };
   const colunas = [
-    {t:'Planeamento', s:'Próximas intervenções', n:planeam, col:'var(--text)', items:[...INST.aguardo.map(r=>[r,'aguardo']),...INST.agendada.map(r=>[r,'agendada'])]},
-    {t:'Em transporte', s:'Trânsito de equipamentos', n:c.transporte, col:'var(--accent)', items:INST.transporte.map(r=>[r,'transporte'])},
-    {t:'Em instalação', s:'Processamento ativo', n:c.instalacao, col:'var(--accent)', items:INST.instalacao.map(r=>[r,'instalacao'])}
+    {id:'plan', t:'Planeamento', s:'Próximas intervenções', n:planeam, col:'var(--text)', items:[...INST.aguardo.map(r=>[r,'aguardo']),...INST.agendada.map(r=>[r,'agendada'])]},
+    {id:'transp', t:'Em transporte', s:'Trânsito de equipamentos', n:c.transporte, col:'var(--accent)', items:INST.transporte.map(r=>[r,'transporte'])},
+    {id:'inst', t:'Em instalação', s:'Processamento ativo', n:c.instalacao, col:'var(--accent)', items:INST.instalacao.map(r=>[r,'instalacao'])}
   ].map(k=>{
     const resto = k.items.length-MAX;
+    INST_VISTA[k.id] = {t:k.t, s:k.s, n:k.n, items:k.items};
     return `<div class="tm-ic"><div class="ch"><div style="min-width:0"><h3>${k.t}</h3><div class="sub">${k.s}</div></div><div class="cn" style="color:${k.col}">${k.n}</div></div>
-      ${k.items.slice(0,MAX).map(([r,t])=>card(r,t)).join('')}
-      ${resto>0?`<div class="tm-more">e mais ${nPt(resto,'lote','lotes')}</div>`:''}</div>`;
+      ${k.items.slice(0,MAX).map(([r,t])=>instCard(r,t)).join('')}
+      ${resto>0?`<button type="button" class="tm-more" onclick="openInstLista('${k.id}')">e mais ${nPt(resto,'lote','lotes')} · ver todos ›</button>`:''}</div>`;
   }).join('');
 
   el.innerHTML = cab + `<div class="tm-ibody">
@@ -2523,7 +2557,7 @@ addEventListener('resize',()=>{
     if(want !== MODE) applyMode(want);     // ex.: tablet a rodar entre retrato e paisagem
   }, 250);
 });
-addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeRegModal(); closePlanModal(); closeMapModal(); closePersonCal(); closeWashCal(); closePersonInsights(); closeInsights(); closeInsightsGate(); } });
+addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeRegModal(); closePlanModal(); closeMapModal(); closePersonCal(); closeWashCal(); closeInstLista(); closePersonInsights(); closeInsights(); closeInsightsGate(); } });
 addEventListener('orientationchange',()=>setTimeout(()=>dispatchEvent(new Event('resize')),300));
 
 /* ═══ Google Sheets ═══ */
@@ -3374,6 +3408,17 @@ function seguinte(t){
 
 /* ═══ Calendário individual ═══ */
 let pcalId=null, pcalRef=new Date();
+
+/* lista completa de uma coluna das instalações */
+function openInstLista(id){
+  const v=INST_VISTA[id]; if(!v) return;
+  document.getElementById('ilist-titulo').textContent=v.t;
+  document.getElementById('ilist-sub').textContent=`${nPt(v.items.length,'lote','lotes')} · ${v.s}`;
+  document.getElementById('ilist-lista').innerHTML=v.items.map(([r,t])=>instCard(r,t)).join('');
+  document.getElementById('ilist-lista').scrollTop=0;
+  document.getElementById('ilist-scrim').classList.add('on');
+}
+function closeInstLista(){ document.getElementById('ilist-scrim').classList.remove('on'); }
 
 /* ── Calendário de ensaios WashLab (Google Calendar) ── */
 let wcalRef=new Date();
@@ -4387,7 +4432,7 @@ let proximaRecarga = Date.now() + RECARGA_MS;
 
 function podeRecarregar(){
   if(!navigator.onLine) return false;
-  if(document.querySelector('#reg-scrim.on,#plan-scrim.on,#map-scrim.on,#pcal-scrim.on,#wcal-scrim.on,#ins-scrim.on,#pins-scrim.on,#inspass-scrim.on')) return false;
+  if(document.querySelector('#reg-scrim.on,#plan-scrim.on,#map-scrim.on,#pcal-scrim.on,#wcal-scrim.on,#ilist-scrim.on,#ins-scrim.on,#pins-scrim.on,#inspass-scrim.on')) return false;
   const foco=document.activeElement;
   if(foco && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName)) return false;
   const feito=document.getElementById('ph-done');
