@@ -1170,6 +1170,9 @@ html.tv #ilist-sheet{zoom:clamp(1,.115vh,2.2)}
 #ilist-lista .tm-it .rg b{font-size:14px}
 button.tm-more{align-self:flex-start;background:var(--fill);color:var(--text-2);border-radius:99px;padding:calc(5*var(--u)) calc(14*var(--u));font-weight:600;cursor:pointer}
 button.tm-more:hover,button.tm-more:focus-visible{background:var(--fill-2);color:var(--text)}
+.tm-tag{margin-left:auto;flex:none;display:flex;align-items:baseline;gap:calc(7*var(--u));padding:calc(6*var(--u)) calc(14*var(--u));border-radius:99px;background:color-mix(in srgb,var(--wash) 16%,transparent);border:1px solid color-mix(in srgb,var(--wash) 40%,transparent);color:var(--wash)}
+.tm-tag b{font-size:calc(26*var(--u));font-weight:700;letter-spacing:-.04em;line-height:1}
+.tm-tag span{font-size:calc(14*var(--u));font-weight:600;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1850,8 +1853,11 @@ const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','n
 function renderWash(id='tm-wash', N=5, U=3){
   const el=document.getElementById(id); if(!el) return;
   const hid='h-'+id;
+  const ano=String(new Date().getFullYear());
+  const nAno = WASH.ok ? WASH.lista.filter(r=>String(r.data||'').startsWith(ano)).length : null;
+  const tag = nAno===null ? '' : `<div class="tm-tag" title="Ensaios realizados em ${ano}"><b>${nAno}</b><span>${nAno===1?'ensaio':'ensaios'} em ${ano}</span></div>`;
   const cab = `<div class="tm-sh"><div class="sq" style="background:var(--wash)">${SVG_(IC_PATH.frasco)}</div>
-    <div><h2 id="${hid}">Ensaios WashLab</h2><div class="sub">${CAL_API_KEY?'Próximos ensaios e relatórios recentes':'Relatórios mais recentes'}</div></div></div>`;
+    <div><h2 id="${hid}">Ensaios WashLab</h2><div class="sub">${CAL_API_KEY?'Agenda e relatórios':'Relatórios mais recentes'}</div></div>${tag}</div>`;
   const chip=(dia,cls='')=>{
     const m=String(dia||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
     return `<div class="dt${cls}"><b>${m?m[3]:'--'}</b><span>${m?MESES_PT[+m[2]-1]:''}</span></div>`;
