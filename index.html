@@ -1759,26 +1759,32 @@ function renderWash(id='tm-wash', N=5, U=3){
   const el=document.getElementById(id); if(!el) return;
   const hid='h-'+id;
   const cab = `<div class="tm-sh"><div class="sq" style="background:var(--wash)">${SVG_(IC_PATH.frasco)}</div>
-    <div><h2 id="${hid}">Ensaios WashLab</h2><div class="sub">${CAL.ok&&CAL.lista.length?'Próximos ensaios e relatórios recentes':'Relatórios mais recentes'}</div></div></div>`;
+    <div><h2 id="${hid}">Ensaios WashLab</h2><div class="sub">${CAL_API_KEY?'Próximos ensaios e relatórios recentes':'Relatórios mais recentes'}</div></div></div>`;
   const chip=(dia,cls='')=>{
     const m=String(dia||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
     return `<div class="dt${cls}"><b>${m?m[3]:'--'}</b><span>${m?MESES_PT[+m[2]-1]:''}</span></div>`;
   };
   const hoje=isoHoje();
   const prox = CAL.ok ? CAL.lista.filter(e=>e.dia>=hoje).slice(0,U) : [];
+  const comCal = !!CAL_API_KEY && (CAL.ok || CAL.tentou);
   let html='';
+  if(comCal){
+    html += `<div class="tm-lbl">Próximos ensaios</div>`;
+    if(!CAL.ok) html += `<div class="tm-empty">Calendário indisponível<br><small>${esc(CAL.erro.slice(0,90))}</small></div>`;
+    else if(!prox.length) html += `<div class="tm-empty">Sem ensaios agendados</div>`;
+  }
   if(prox.length){
-    html += `<div class="tm-lbl">Próximos ensaios</div>` + prox.map(e=>`<div class="g-card tm-wr cal">${chip(e.dia,' prox')}
+    html += prox.map(e=>`<div class="g-card tm-wr cal">${chip(e.dia,' prox')}
       <div class="tx"><div class="cl">${esc(e.titulo)}</div><div class="id">${e.dia===hoje?'Hoje':''}${e.dia===hoje&&e.hora?' · ':''}${esc(e.hora||(e.dia===hoje?'':'Dia todo'))}</div></div></div>`).join('');
   }
   if(!WASH.ok){
     el.innerHTML = cab + `<div class="tm-wl">${html}<div class="tm-empty">${WASH.tentou?'Sem ligação aos relatórios WashLab':'A carregar relatórios…'}</div></div>`;
     return;
   }
-  const n = prox.length ? Math.max(2,N-prox.length) : N;
+  const n = comCal ? Math.max(2,N-Math.max(prox.length,1)) : N;
   const rows = WASH.lista.slice(0,n).map(r=>`<div class="g-card tm-wr">${chip(r.data)}
       <div class="tx"><div class="cl">${esc(r.cliente||'—')}</div><div class="id">${esc(r.id||'')}</div></div></div>`).join('');
-  if(prox.length) html += `<div class="tm-lbl">Relatórios recentes</div>`;
+  if(comCal) html += `<div class="tm-lbl">Relatórios recentes</div>`;
   el.innerHTML = cab + `<div class="tm-wl" role="list" aria-label="Ensaios WashLab">${html}${rows||'<div class="tm-empty">Sem relatórios</div>'}</div>`;
 }
 
@@ -2026,21 +2032,22 @@ function renderExternos(){
    Google Cloud (Calendar API ativa, restrita a este site) e colocá-la em CAL_API_KEY. */
 const CAL_ID = "c_d89img0gp1ijoqa6t2bh53hmqs@group.calendar.google.com";
 const CAL_API_KEY = "AIzaSyCWufsrGsE_yXRPudC_8LAn3AhhUnjuAcI";
-const CAL = {ok:false, lista:[]};
+const CAL = {ok:false, tentou:false, erro:'', lista:[]};
 async function lerCalendario(){
   if(!CAL_API_KEY) return false;
   try{
     const ini=new Date(); ini.setHours(0,0,0,0);
     const url=`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CAL_ID)}/events?key=${encodeURIComponent(CAL_API_KEY)}&singleEvents=true&orderBy=startTime&maxResults=8&timeMin=${encodeURIComponent(ini.toISOString())}`;
+    CAL.tentou=true;
     const r=await fetch(url,{cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const d=await r.json();
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error('HTTP '+r.status+(d.error&&d.error.message?' · '+d.error.message:''));
     CAL.lista=(d.items||[]).filter(e=>e.status!=='cancelled').map(e=>{
       const st=e.start||{}, dt=st.dateTime||'', dia=(st.date||dt).slice(0,10);
       return {dia, hora:dt?dt.slice(11,16):'', titulo:e.summary||'(sem título)'};
     }).filter(e=>e.dia);
     CAL.ok=true; return true;
-  }catch(e){ if(DEBUG) console.warn('calendário:',e); return false; }
+  }catch(e){ CAL.ok=false; CAL.erro=String(e.message||e); if(DEBUG) console.warn('calendário:',e); return false; }
 }
 async function sincronizarExternos(){
   await Promise.all([lerInstalacoes(), lerWash(), lerCalendario()]);

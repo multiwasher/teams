@@ -10,7 +10,7 @@
      TV e aos telemóveis; a cópia em cache serve só quando não há rede.
    · O resto (ícones, manifesto, Leaflet, tipos de letra) vem primeiro da cache.
    Mudar VERSAO invalida tudo o que ficou da versão anterior. */
-const VERSAO = '2026-09-02';
+const VERSAO = '2026-10-09';
 const CACHE = `bizdev-${VERSAO}`;
 
 const ESSENCIAIS = [
@@ -26,6 +26,8 @@ const ESSENCIAIS = [
 /** Nunca guardar: dados da equipa e mosaicos do mapa. */
 const SEM_CACHE = [
   /script\.google\.com/i,
+  /docs\.google\.com/i,                    // folhas lidas em CSV (equipa, instalações, WashLab)
+  /googleapis\.com\/calendar/i,            // calendário dos ensaios
   /basemaps\.cartocdn\.com/i,
   /tile\.openstreetmap\.org/i
 ];
