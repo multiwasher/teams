@@ -1147,6 +1147,9 @@ html.tv #wcal-sheet{zoom:clamp(1,.115vh,2.2)}
 .tm-wl.c3 .tm-wr .cl{font-size:calc(17*var(--u))}
 .tm-wl.c3 .tm-wr .id{font-size:calc(14*var(--u))}
 .tm-wl.c3 .tm-lbl{font-size:calc(13*var(--u));margin-top:0}
+.tm-wr .id a.rl{color:var(--text-2);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--wash) 55%,transparent)}
+.tm-wr .id a.rl span{color:var(--wash);font-weight:700}
+.tm-wr .id a.rl:hover,.tm-wr .id a.rl:focus-visible{color:var(--text)}
 </style>
 </head>
 <body>
@@ -1838,7 +1841,7 @@ function renderWash(id='tm-wash', N=5, U=3){
   }
   const n = comCal ? Math.max(2,N-Math.max(prox.length,1)) : N;
   const rows = WASH.lista.slice(0,n).map(r=>`<div class="g-card tm-wr">${chip(r.data)}
-      <div class="tx"><div class="cl">${esc(r.cliente||'—')}</div><div class="id">${esc(r.id||'')}</div></div></div>`).join('');
+      <div class="tx"><div class="cl">${esc(r.cliente||'—')}</div><div class="id">${r.id?`<a class="rl" href="${esc(WASH_WEBAPP_URL)}?id=${encodeURIComponent(r.id)}" target="_blank" rel="noopener" title="Abrir o relatório">${esc(r.id)} <span aria-hidden="true">↗</span></a>`:''}</div></div></div>`).join('');
   if(comCal) html += `<div class="tm-lbl">Relatórios recentes</div>`;
   el.innerHTML = cab + `<div class="tm-wl${comCal&&id==='tm-wash'?' c3':''}" role="list" aria-label="Ensaios WashLab">${html}${rows||'<div class="tm-empty">Sem relatórios</div>'}</div>`;
 }
