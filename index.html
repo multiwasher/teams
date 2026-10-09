@@ -1176,6 +1176,12 @@ button.tm-more:hover,button.tm-more:focus-visible{background:var(--fill-2);color
 .tm-tag{margin-left:auto;flex:none;display:flex;align-items:baseline;gap:calc(7*var(--u));padding:calc(6*var(--u)) calc(14*var(--u));border-radius:99px;background:color-mix(in srgb,var(--wash) 16%,transparent);border:1px solid color-mix(in srgb,var(--wash) 40%,transparent);color:var(--wash)}
 .tm-tag b{font-size:calc(26*var(--u));font-weight:700;letter-spacing:-.04em;line-height:1}
 .tm-tag span{font-size:calc(14*var(--u));font-weight:600;white-space:nowrap}
+#ilist-lista .tm-wr{flex:none;border-radius:16px;padding:6px 14px 6px 6px;gap:14px}
+#ilist-lista .tm-wr .dt{width:52px;height:46px;border-radius:11px}
+#ilist-lista .tm-wr .dt b{font-size:20px}
+#ilist-lista .tm-wr .dt span{font-size:12px}
+#ilist-lista .tm-wr .cl{font-size:15px}
+#ilist-lista .tm-wr .id{font-size:13px}
 </style>
 </head>
 <body>
@@ -1885,7 +1891,7 @@ function renderWash(id='tm-wash', N=5, U=3){
   const n = comCal ? Math.max(2,N-Math.max(prox.length,1)) : N;
   const rows = WASH.lista.slice(0,n).map(r=>`<div class="g-card tm-wr">${chip(r.data)}
       <div class="tx"><div class="cl">${esc(r.cliente||'—')}</div><div class="id">${r.id?`<a class="rl" href="${esc(WASH_WEBAPP_URL)}?id=${encodeURIComponent(r.id)}" target="_blank" rel="noopener" title="Abrir o relatório">${esc(r.id)} <span aria-hidden="true">↗</span></a>`:''}</div></div></div>`).join('');
-  if(comCal) html += `<div class="tm-lbl">Relatórios recentes</div>`;
+  html += `<div class="tm-lbl clic" onclick="openWashLista()">Relatórios recentes <i>Ver todos ›</i></div>`;
   el.innerHTML = cab + `<div class="tm-wl${comCal&&id==='tm-wash'?' c3':''}" role="list" aria-label="Ensaios WashLab">${html}${rows||'<div class="tm-empty">Sem relatórios</div>'}</div>`;
 }
 
@@ -3421,9 +3427,25 @@ let pcalId=null, pcalRef=new Date();
 /* lista completa de uma coluna das instalações */
 function openInstLista(id){
   const v=INST_VISTA[id]; if(!v) return;
+  const sq=document.querySelector('#ilist-head .sq'); sq.style.background='var(--accent)'; sq.innerHTML=SVG_(IC_PATH.caixa);
   document.getElementById('ilist-titulo').textContent=v.t;
   document.getElementById('ilist-sub').textContent=`${nPt(v.items.length,'lote','lotes')} · ${v.s}`;
   document.getElementById('ilist-lista').innerHTML=v.items.map(([r,t])=>instCard(r,t)).join('');
+  document.getElementById('ilist-lista').scrollTop=0;
+  document.getElementById('ilist-scrim').classList.add('on');
+}
+/* lista completa dos relatórios WashLab */
+function openWashLista(){
+  if(!WASH.ok) return;
+  const ano=String(new Date().getFullYear());
+  const sq=document.querySelector('#ilist-head .sq'); sq.style.background='var(--wash)'; sq.innerHTML=SVG_(IC_PATH.frasco);
+  document.getElementById('ilist-titulo').textContent='Relatórios WashLab';
+  document.getElementById('ilist-sub').textContent=`${nPt(WASH.lista.length,'relatório','relatórios')} · ${WASH.lista.filter(r=>String(r.data||'').startsWith(ano)).length} em ${ano}`;
+  document.getElementById('ilist-lista').innerHTML=WASH.lista.map(r=>{
+    const m=String(r.data||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return `<div class="g-card tm-wr"><div class="dt"><b>${m?m[3]:'--'}</b><span>${m?MESES_PT[+m[2]-1]:''}</span></div>
+      <div class="tx"><div class="cl">${esc(r.cliente||'—')}</div><div class="id">${r.id?`<a class="rl" href="${esc(WASH_WEBAPP_URL)}?id=${encodeURIComponent(r.id)}" target="_blank" rel="noopener">${esc(r.id)} <span aria-hidden="true">↗</span></a>`:''}${m?` · ${m[1]}`:''}</div></div></div>`;
+  }).join('');
   document.getElementById('ilist-lista').scrollTop=0;
   document.getElementById('ilist-scrim').classList.add('on');
 }
