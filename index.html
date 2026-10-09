@@ -2098,7 +2098,7 @@ async function lerCalendario(){
     const r=await fetch(url,{cache:'no-store'});
     const d=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error('HTTP '+r.status+(d.error&&d.error.message?' · '+d.error.message:''));
-    CAL.lista=(d.items||[]).filter(e=>e.status!=='cancelled').map(e=>{
+    CAL.lista=(d.items||[]).filter(e=>e.status!=='cancelled' && !/^indisponivel/.test(semAcentos(e.summary).toLowerCase().trim())).map(e=>{
       const st=e.start||{}, dt=st.dateTime||'', dia=(st.date||dt).slice(0,10);
       return {dia, hora:dt?dt.slice(11,16):'', titulo:e.summary||'(sem título)'};
     }).filter(e=>e.dia);
