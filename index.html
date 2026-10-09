@@ -1046,13 +1046,14 @@ html[data-theme="light"]{--accent:#5856D6;--ok:#1E9E45;--warn:#C4001A;--wash:#E0
 .tm-ibody{flex:1;min-height:0;display:flex;gap:calc(28*var(--u))}
 .tm-donut{flex:none;width:calc(230*var(--u));display:flex;flex-direction:column;align-items:center;gap:calc(14*var(--u))}
 .tm-ring{position:relative;width:calc(196*var(--u));height:calc(196*var(--u));flex:none}
+.tm-ring .rs{position:absolute;inset:0;width:100%;height:100%}
 .tm-ring .r{position:absolute;inset:0;border-radius:50%;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - calc(26*var(--u))),#000 calc(100% - calc(25*var(--u))));mask:radial-gradient(farthest-side,transparent calc(100% - calc(26*var(--u))),#000 calc(100% - calc(25*var(--u))))}
 .tm-ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .tm-ring .c b{font-size:calc(50*var(--u));font-weight:700;letter-spacing:-.045em;line-height:1}
 .tm-ring .c span{font-size:calc(15*var(--u));color:var(--text-2);margin-top:calc(4*var(--u))}
 .tm-leg{width:100%;display:flex;flex-direction:column;gap:calc(6*var(--u))}
 .tm-leg div{display:flex;align-items:center;gap:calc(10*var(--u));font-size:calc(16*var(--u))}
-.tm-leg i{width:calc(12*var(--u));height:calc(12*var(--u));border-radius:calc(4*var(--u));flex:none}
+.tm-leg .sw{width:calc(16*var(--u));height:calc(16*var(--u));flex:none}
 .tm-leg span{flex:1;white-space:nowrap}
 .tm-leg b{font-weight:700;font-size:calc(18*var(--u))}
 .tm-icols{flex:1;min-width:0;display:flex;gap:calc(14*var(--u))}
@@ -1655,6 +1656,28 @@ const INST_COL = {
   transporte:'color-mix(in srgb, var(--accent) 62%, var(--surface))',
   planeamento:'color-mix(in srgb, var(--accent) 30%, var(--surface))'
 };
+/* Padrões (além da cor) para quem não distingue cores: liso, riscas, pontos, grelha. */
+const PAT_DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <pattern id="pt-concluida" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" style="fill:var(--ok)"/></pattern>
+  <pattern id="pt-instalacao" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" style="fill:var(--accent)"/><rect width="4.5" height="10" fill="#fff" fill-opacity=".6"/></pattern>
+  <pattern id="pt-transporte" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" style="fill:color-mix(in srgb, var(--accent) 62%, var(--surface))"/><circle cx="5" cy="5" r="2.4" fill="#fff" fill-opacity=".8"/></pattern>
+  <pattern id="pt-planeamento" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" style="fill:color-mix(in srgb, var(--accent) 30%, var(--surface))"/><path d="M0 4H8M4 0V8" style="stroke:var(--text)" stroke-opacity=".55" stroke-width="1.4"/></pattern>
+</defs></svg>`;
+const swatchPat = id=>`<svg class="sw" viewBox="0 0 14 14" aria-hidden="true"><g transform="scale(.6)"><rect width="23.4" height="23.4" rx="6.5" fill="url(#${id})"/></g></svg>`;
+function donutSvg(segs,total){
+  const R=85, C=98, W=26, g=segs.filter(x=>x[0]>0).length>1?1.2:0;
+  const pt=(a)=>{const r=(a-90)*Math.PI/180;return [C+R*Math.cos(r),C+R*Math.sin(r)]};
+  let acc=0, out='';
+  if(!total) return `<svg viewBox="0 0 196 196" class="rs"><circle cx="${C}" cy="${C}" r="${R}" fill="none" style="stroke:var(--fill-2)" stroke-width="${W}"/></svg>`;
+  segs.forEach(([n,id])=>{
+    if(!n) return;
+    const a0=acc/total*360, a1=(acc+n)/total*360; acc+=n;
+    if(a1-a0>=359.9){ out+=`<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="url(#${id})" stroke-width="${W}"/>`; return; }
+    const [x0,y0]=pt(a0+g/2), [x1,y1]=pt(a1-g/2), big=(a1-a0-g)>180?1:0;
+    out+=`<path d="M${x0.toFixed(2)} ${y0.toFixed(2)}A${R} ${R} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}" fill="none" stroke="url(#${id})" stroke-width="${W}"/>`;
+  });
+  return `<svg viewBox="0 0 196 196" class="rs" aria-hidden="true">${out}</svg>`;
+}
 function renderInstalacoes(){
   const el=document.getElementById('tm-inst'); if(!el) return;
   const cab = `<div class="tm-sh"><div class="sq" style="background:var(--accent)">${SVG_(IC_PATH.caixa)}</div>
@@ -1665,12 +1688,10 @@ function renderInstalacoes(){
   }
   const c = INST.counts, total = c.all || 0;
   const planeam = c.agendada + c.aguardo;
-  const seg = [[c.concluida,INST_COL.concluida],[c.instalacao,INST_COL.instalacao],[c.transporte,INST_COL.transporte],[planeam,INST_COL.planeamento]];
-  let acc=0; const stops = total ? seg.filter(s=>s[0]>0).map(([n,col])=>{ const a=acc/total*360; acc+=n; return `${col} ${a}deg ${acc/total*360}deg`; }) : [];
-  const bg = stops.length ? `conic-gradient(${stops.join(',')})` : 'var(--fill-2)';
   const pct = total ? Math.round(c.concluida/total*100) : 0;
-  const legend = [['Concluídas',c.concluida,INST_COL.concluida],['Em instalação',c.instalacao,INST_COL.instalacao],['Em transporte',c.transporte,INST_COL.transporte],['Gestão e planeamento',planeam,INST_COL.planeamento]]
-    .map(([l,n,col])=>`<div><i style="background:${col}"></i><span>${l}</span><b>${n}</b></div>`).join('');
+  const donut = donutSvg([[c.concluida,'pt-concluida'],[c.instalacao,'pt-instalacao'],[c.transporte,'pt-transporte'],[planeam,'pt-planeamento']],total);
+  const legend = [['Concluídas',c.concluida,'pt-concluida'],['Em instalação',c.instalacao,'pt-instalacao'],['Em transporte',c.transporte,'pt-transporte'],['Gestão e planeamento',planeam,'pt-planeamento']]
+    .map(([l,n,id])=>`<div>${swatchPat(id)}<span>${l}</span><b>${n}</b></div>`).join('');
 
   const ring = p=>`conic-gradient(var(--accent) ${Math.max(0,Math.min(100,p))*3.6}deg, var(--fill-2) 0)`;
   const card = (r,tipo)=>{
@@ -1698,9 +1719,9 @@ function renderInstalacoes(){
       ${resto>0?`<div class="tm-more">e mais ${nPt(resto,'lote','lotes')}</div>`:''}</div>`;
   }).join('');
 
-  el.innerHTML = cab + `<div class="tm-ibody">
+  el.innerHTML = PAT_DEFS + cab + `<div class="tm-ibody">
     <div class="tm-donut"><div class="tm-ring" role="img" aria-label="${total} instalações: ${c.concluida} concluídas, ${c.instalacao} em instalação, ${c.transporte} em transporte, ${planeam} em gestão e planeamento">
-      <div class="r" style="background:${bg}"></div><div class="c"><b>${pct}%</b><span>de ${total} concluídas</span></div></div>
+      ${donut}<div class="c"><b>${pct}%</b><span>de ${total} concluídas</span></div></div>
       <div class="tm-leg">${legend}</div></div>
     <div class="tm-icols">${colunas}</div></div>`;
 }
