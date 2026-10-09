@@ -1916,15 +1916,48 @@ async function lerInstalacoes(){
     }catch(e2){ if(DEBUG) console.warn('dat:',e1,e2); return false; }
   }
 }
+const WASH_SHEET_ID = "1hy0ZL8iK2w0jZH_LDXKgnBGprE_CRfOGqg_s4suNsLo";
+const WASH_SHEET_TAB = "Folha1";
+const WASH_CSV_URL = `https://docs.google.com/spreadsheets/d/${WASH_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(WASH_SHEET_TAB)}&headers=1`;
+function dataISO(v){
+  const t=String(v||'').trim(); let m;
+  if((m=t.match(/^(\d{4})-(\d{2})-(\d{2})/))) return `${m[1]}-${m[2]}-${m[3]}`;
+  if((m=t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/))) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return '';
+}
+/** Folha de relatórios WashLab: colunas "ID Relatório", "Data Ensaio", "Cliente". */
+function washLinhas(rows){
+  if(!rows.length) return [];
+  const H=rows[0].map(h=>semAcentos(String(h||'').replace(/^\uFEFF/,'')).toLowerCase().trim());
+  const iId=H.indexOf('id relatorio'), iData=H.findIndex(h=>h.startsWith('data')), iCli=H.indexOf('cliente');
+  if(iId===-1||iCli===-1) throw new Error('cabeçalhos inesperados');
+  const out=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i], id=(r[iId]||'').trim(), cliente=(r[iCli]||'').trim();
+    if(!id && !cliente) continue;
+    out.push({id, cliente, data:dataISO(r[iData]), n:i});
+  }
+  return out;
+}
 async function lerWash(){
   WASH.tentou=true;
+  let lista=null;
   try{
-    const resp = await fetch(`${WASH_WEBAPP_URL}?acao=lista&t=${Date.now()}`,{cache:'no-store'});
-    const d = await resp.json();
-    if(!d || d.ok===false || !Array.isArray(d.relatorios)) throw new Error('resposta inesperada');
-    WASH.lista = d.relatorios.slice().sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
-    WASH.ok=true; return true;
-  }catch(e){ if(DEBUG) console.warn('wash:',e); return false; }
+    const resp = await fetch(`${WASH_CSV_URL}&t=${Date.now()}`,{cache:'no-store'});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    lista = washLinhas(parseCsv(await resp.text()));
+  }catch(e1){
+    try{                                   // reserva: Web App do wash
+      const resp = await fetch(`${WASH_WEBAPP_URL}?acao=lista&t=${Date.now()}`,{cache:'no-store'});
+      const d = await resp.json();
+      if(!d || d.ok===false || !Array.isArray(d.relatorios)) throw new Error('resposta inesperada');
+      lista = d.relatorios.map((r,i)=>({id:r.id, cliente:r.cliente, data:dataISO(r.data), n:-i}));
+    }catch(e2){ if(DEBUG) console.warn('wash:',e1,e2); return false; }
+  }
+  const vistos=new Set();                  // a folha tem uma linha por utensílio: um relatório = um ID
+  lista = lista.filter(r=>{ const k=r.id||('#'+r.n); if(vistos.has(k)) return false; vistos.add(k); return true; });
+  WASH.lista = lista.sort((a,b)=>b.data.localeCompare(a.data) || b.n-a.n);
+  WASH.ok=true; return true;
 }
 async function sincronizarExternos(){
   await Promise.all([lerInstalacoes(), lerWash()]);
